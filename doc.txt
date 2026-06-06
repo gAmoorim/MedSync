@@ -1,0 +1,409 @@
+# 📋 Documentação de Controllers e Rotas
+## Sistema de Agendamento para Clínicas
+
+## 🔐 AUTH
+
+---
+
+### controllerLogin (POST /login)
+- Body: `email`, `senha`
+- Validar campos obrigatórios
+- Verificar se email existe na tabela `usuarios`
+- Comparar senha com bcrypt
+- Gerar token JWT com: `id`, `nome`, `tipo` (`paciente` | `medico` | `admin`)
+- Retornar 200 + token + dados do usuário (sem senha)
+
+---
+
+## 👤 PACIENTE
+
+---
+
+### controllerCriarPaciente (POST /pacientes/registro)
+- Body: `nome`, `email`, `senha_hash`, `telefone`, `data_nascimento`, `cpf`
+- Validar campos obrigatórios
+- Validar formato de email
+- Validar formato de CPF
+- Verificar se email já está cadastrado
+- Verificar se CPF já está cadastrado
+- Hashear senha com bcrypt
+- Inserir na tabela `usuarios` com tipo `paciente`
+- Inserir dados complementares na tabela `pacientes`
+- Retornar 201 + dados do paciente criado (sem senha)
+
+---
+
+### controllerPerfilPaciente (GET /pacientes/perfil)
+- Autenticação: JWT obrigatório
+- Buscar dados do paciente pelo `id` extraído do token
+- Retornar 200 + dados completos do paciente (nome, email, telefone, data_nascimento, cpf)
+
+---
+
+### controllerAtualizarPaciente (PUT /pacientes/perfil)
+- Autenticação: JWT obrigatório (tipo: `paciente`)
+- Body: `nome`, `telefone`, `data_nascimento` (campos opcionais, pelo menos 1 obrigatório)
+- Não permitir atualização de email, CPF ou senha por esta rota
+- Atualizar dados na tabela `pacientes` e `usuarios` pelo `id` do token
+- Retornar 200 + dados atualizados
+
+---
+
+### controllerAlterarSenhaPaciente (PUT /pacientes/senha)
+- Autenticação: JWT obrigatório (tipo: `paciente`)
+- Body: `senha_atual`, `nova_senha`, `confirmar_nova_senha`
+- Validar que `nova_senha` e `confirmar_nova_senha` são iguais
+- Validar tamanho mínimo da `nova_senha` (mínimo 8 caracteres)
+- Buscar senha atual no banco pelo `id` do token
+- Comparar `senha_atual` com bcrypt
+- Hashear `nova_senha` com bcrypt
+- Atualizar senha na tabela `usuarios`
+- Retornar 200 + mensagem de sucesso
+
+---
+
+### controllerHorariosDisponiveis (GET /pacientes/horarios-disponiveis)
+- Autenticação: JWT obrigatório (tipo: `paciente`)
+- Query params: `data` (obrigatório), `especialidade` (opcional), `medico_id` (opcional)
+- Validar formato da `data` (não pode ser data passada)
+- Buscar todos os horários de atendimento dos médicos ativos para a data informada
+- Filtrar por `especialidade` se informado
+- Filtrar por `medico_id` se informado
+- Excluir horários que já possuem consulta agendada ou confirmada
+- Retornar 200 + lista de horários disponíveis com: `horario_id`, `medico_id`, `medico_nome`, `especialidade`, `data`, `hora_inicio`, `hora_fim`
+
+---
+
+### controllerAgendarConsulta (POST /pacientes/consultas)
+- Autenticação: JWT obrigatório (tipo: `paciente`)
+- Body: `horario_id`, `observacoes` (opcional)
+- Validar campo obrigatório `horario_id`
+- Verificar se horário existe e pertence a um médico ativo
+- Verificar se horário ainda está disponível (sem consulta agendada/confirmada no mesmo slot)
+- Verificar se paciente já não possui consulta agendada no mesmo dia/hora
+- Criar consulta na tabela `consultas` com status `agendada`
+- Enviar e-mail de confirmação ao paciente com: médico, especialidade, data, hora, local
+- Retornar 201 + dados da consulta criada
+
+---
+
+### controllerCancelarConsultaPaciente (PUT /pacientes/consultas/:consulta_id/cancelar)
+- Autenticação: JWT obrigatório (tipo: `paciente`)
+- Params: `consulta_id`
+- Buscar consulta pelo `consulta_id`
+- Verificar se a consulta pertence ao paciente logado
+- Verificar se status atual é `agendada` ou `confirmada` (não pode cancelar `concluida` ou `cancelada`)
+- Verificar se a data da consulta é futura (política: não cancelar com menos de X horas de antecedência — recomendado 2h)
+- Atualizar status para `cancelada` na tabela `consultas`
+- Enviar e-mail de confirmação de cancelamento ao paciente
+- Retornar 200 + mensagem de sucesso
+
+---
+
+### controllerHistoricoConsultasPaciente (GET /pacientes/consultas)
+- Autenticação: JWT obrigatório (tipo: `paciente`)
+- Query params: `status` (opcional: `agendada` | `confirmada` | `concluida` | `cancelada`), `pagina` (default: 1), `limite` (default: 10)
+- Buscar todas as consultas do paciente logado pelo `id` do token
+- Filtrar por `status` se informado
+- Ordenar por data decrescente (mais recentes primeiro)
+- Aplicar paginação
+- Retornar 200 + lista de consultas com: `consulta_id`, `medico_nome`, `especialidade`, `data`, `hora`, `status`, `observacoes`
+
+---
+
+### controllerDetalheConsultaPaciente (GET /pacientes/consultas/:consulta_id)
+- Autenticação: JWT obrigatório (tipo: `paciente`)
+- Params: `consulta_id`
+- Buscar consulta pelo `consulta_id`
+- Verificar se a consulta pertence ao paciente logado
+- Retornar 200 + dados completos da consulta: `medico_nome`, `especialidade`, `crm`, `data`, `hora`, `status`, `observacoes`, `anotacoes_medico` (se houver)
+
+---
+
+## 🩺 MÉDICO
+
+---
+
+### controllerAgendaMedico (GET /medicos/agenda)
+- Autenticação: JWT obrigatório (tipo: `medico`)
+- Query params: `data_inicio` (obrigatório), `data_fim` (obrigatório)
+- Validar que `data_fim` >= `data_inicio`
+- Validar que o intervalo máximo é de 31 dias
+- Buscar todas as consultas do médico logado no período informado
+- Retornar 200 + lista de consultas com: `consulta_id`, `paciente_nome`, `data`, `hora_inicio`, `hora_fim`, `status`, `observacoes`
+
+---
+
+### controllerPacientesAgendadosMedico (GET /medicos/consultas)
+- Autenticação: JWT obrigatório (tipo: `medico`)
+- Query params: `data` (opcional, default: hoje), `status` (opcional), `pagina` (default: 1), `limite` (default: 10)
+- Buscar consultas do médico logado filtradas pelos params
+- Ordenar por hora crescente
+- Retornar 200 + lista de consultas com: `consulta_id`, `paciente_nome`, `paciente_telefone`, `data`, `hora`, `status`, `observacoes`
+
+---
+
+### controllerDetalheConsultaMedico (GET /medicos/consultas/:consulta_id)
+- Autenticação: JWT obrigatório (tipo: `medico`)
+- Params: `consulta_id`
+- Buscar consulta pelo `consulta_id`
+- Verificar se a consulta pertence ao médico logado
+- Retornar 200 + dados completos: `paciente_nome`, `paciente_cpf`, `paciente_data_nascimento`, `paciente_telefone`, `data`, `hora`, `status`, `observacoes`, `anotacoes_medico`
+
+---
+
+### controllerConcluirConsulta (PUT /medicos/consultas/:consulta_id/concluir)
+- Autenticação: JWT obrigatório (tipo: `medico`)
+- Params: `consulta_id`
+- Body: `anotacoes_medico` (opcional)
+- Buscar consulta pelo `consulta_id`
+- Verificar se a consulta pertence ao médico logado
+- Verificar se status atual é `agendada` ou `confirmada`
+- Atualizar status para `concluida` na tabela `consultas`
+- Salvar `anotacoes_medico` se informado
+- Registrar `data_hora_conclusao`
+- Retornar 200 + dados atualizados da consulta
+
+---
+
+### controllerConfirmarConsulta (PUT /medicos/consultas/:consulta_id/confirmar)
+- Autenticação: JWT obrigatório (tipo: `medico`)
+- Params: `consulta_id`
+- Buscar consulta pelo `consulta_id`
+- Verificar se a consulta pertence ao médico logado
+- Verificar se status atual é `agendada`
+- Atualizar status para `confirmada`
+- Enviar e-mail de confirmação ao paciente
+- Retornar 200 + mensagem de sucesso
+
+---
+
+### controllerDefinirHorarios (POST /medicos/horarios)
+- Autenticação: JWT obrigatório (tipo: `medico`)
+- Body: `dia_semana` (0-6), `hora_inicio`, `hora_fim`, `intervalo_minutos` (ex: 30), `data_inicio_vigencia`, `data_fim_vigencia` (opcional)
+- Validar campos obrigatórios
+- Validar que `hora_fim` > `hora_inicio`
+- Validar que `intervalo_minutos` é positivo e gera ao menos 1 slot
+- Verificar conflito com horários já cadastrados para o mesmo dia
+- Inserir na tabela `horarios_atendimento`
+- Retornar 201 + horários criados com slots gerados
+
+---
+
+### controllerListarHorariosMedico (GET /medicos/horarios)
+- Autenticação: JWT obrigatório (tipo: `medico`)
+- Buscar todos os horários de atendimento do médico logado
+- Retornar 200 + lista com: `horario_id`, `dia_semana`, `hora_inicio`, `hora_fim`, `intervalo_minutos`, `ativo`, `data_inicio_vigencia`, `data_fim_vigencia`
+
+---
+
+### controllerAtualizarHorario (PUT /medicos/horarios/:horario_id)
+- Autenticação: JWT obrigatório (tipo: `medico`)
+- Params: `horario_id`
+- Body: `hora_inicio`, `hora_fim`, `intervalo_minutos`, `ativo`, `data_fim_vigencia` (campos opcionais)
+- Verificar se o horário pertence ao médico logado
+- Verificar se há consultas `agendadas` ou `confirmadas` nos slots que seriam afetados pela alteração
+- Se houver consultas afetadas, retornar 409 + lista das consultas conflitantes
+- Atualizar horário na tabela `horarios_atendimento`
+- Retornar 200 + dados atualizados
+
+---
+
+### controllerDeletarHorario (DELETE /medicos/horarios/:horario_id)
+- Autenticação: JWT obrigatório (tipo: `medico`)
+- Params: `horario_id`
+- Verificar se o horário pertence ao médico logado
+- Verificar se há consultas `agendadas` ou `confirmadas` vinculadas a este horário
+- Se houver, retornar 409 com mensagem explicando o impedimento
+- Deletar (ou inativar) o horário na tabela `horarios_atendimento`
+- Retornar 200 + mensagem de sucesso
+
+---
+
+### controllerPerfilMedico (GET /medicos/perfil)
+- Autenticação: JWT obrigatório (tipo: `medico`)
+- Buscar dados do médico pelo `id` do token
+- Retornar 200 + dados: `nome`, `email`, `crm`, `especialidade`, `telefone`
+
+---
+
+### controllerAtualizarPerfilMedico (PUT /medicos/perfil)
+- Autenticação: JWT obrigatório (tipo: `medico`)
+- Body: `nome`, `telefone` (campos opcionais)
+- Não permitir alteração de CRM, especialidade ou email por esta rota
+- Atualizar dados na tabela `medicos` e `usuarios`
+- Retornar 200 + dados atualizados
+
+---
+
+## 🛡️ ADMINISTRADOR
+
+---
+
+### controllerCadastrarMedico (POST /admin/medicos)
+- Autenticação: JWT obrigatório (tipo: `admin`)
+- Body: `nome`, `email`, `senha`, `crm`, `especialidade`, `telefone`
+- Validar campos obrigatórios
+- Validar formato de email
+- Validar formato de CRM
+- Verificar se email já cadastrado
+- Verificar se CRM já cadastrado
+- Hashear senha com bcrypt
+- Inserir na tabela `usuarios` com tipo `medico`
+- Inserir dados complementares na tabela `medicos`
+- Retornar 201 + dados do médico criado (sem senha)
+
+---
+
+### controllerListarMedicos (GET /admin/medicos)
+- Autenticação: JWT obrigatório (tipo: `admin`)
+- Query params: `especialidade` (opcional), `ativo` (opcional: `true` | `false`), `pagina` (default: 1), `limite` (default: 10)
+- Buscar médicos com filtros aplicados
+- Retornar 200 + lista com: `medico_id`, `nome`, `email`, `crm`, `especialidade`, `telefone`, `ativo`
+
+---
+
+### controllerDetalheMedico (GET /admin/medicos/:medico_id)
+- Autenticação: JWT obrigatório (tipo: `admin`)
+- Params: `medico_id`
+- Buscar médico pelo ID
+- Retornar 200 + dados completos + total de consultas realizadas
+
+---
+
+### controllerAtualizarMedico (PUT /admin/medicos/:medico_id)
+- Autenticação: JWT obrigatório (tipo: `admin`)
+- Params: `medico_id`
+- Body: `nome`, `email`, `crm`, `especialidade`, `telefone`, `ativo` (campos opcionais)
+- Verificar se médico existe
+- Se novo email, verificar unicidade
+- Se novo CRM, verificar unicidade
+- Atualizar nas tabelas `usuarios` e `medicos`
+- Retornar 200 + dados atualizados
+
+---
+
+### controllerInativarMedico (PUT /admin/medicos/:medico_id/inativar)
+- Autenticação: JWT obrigatório (tipo: `admin`)
+- Params: `medico_id`
+- Verificar se médico existe e está ativo
+- Verificar se há consultas `agendadas` ou `confirmadas` futuras para este médico
+- Se houver, retornar 409 + lista das consultas pendentes
+- Atualizar `ativo = false` na tabela `medicos`
+- Retornar 200 + mensagem de sucesso
+
+---
+
+### controllerListarPacientes (GET /admin/pacientes)
+- Autenticação: JWT obrigatório (tipo: `admin`)
+- Query params: `nome` (opcional, busca parcial), `cpf` (opcional), `pagina` (default: 1), `limite` (default: 10)
+- Buscar pacientes com filtros aplicados
+- Retornar 200 + lista com: `paciente_id`, `nome`, `email`, `cpf`, `telefone`, `data_nascimento`, `total_consultas`
+
+---
+
+### controllerDetalhePaciente (GET /admin/pacientes/:paciente_id)
+- Autenticação: JWT obrigatório (tipo: `admin`)
+- Params: `paciente_id`
+- Buscar paciente pelo ID
+- Incluir histórico resumido de consultas (últimas 5)
+- Retornar 200 + dados completos do paciente + resumo de consultas
+
+---
+
+### controllerAtualizarPacienteAdmin (PUT /admin/pacientes/:paciente_id)
+- Autenticação: JWT obrigatório (tipo: `admin`)
+- Params: `paciente_id`
+- Body: `nome`, `email`, `telefone`, `data_nascimento`, `ativo` (campos opcionais)
+- Verificar se paciente existe
+- Se novo email, verificar unicidade
+- Atualizar nas tabelas `usuarios` e `pacientes`
+- Retornar 200 + dados atualizados
+
+---
+
+### controllerListarConsultasAdmin (GET /admin/consultas)
+- Autenticação: JWT obrigatório (tipo: `admin`)
+- Query params: `status` (opcional), `medico_id` (opcional), `paciente_id` (opcional), `data_inicio` (opcional), `data_fim` (opcional), `pagina` (default: 1), `limite` (default: 10)
+- Buscar consultas com todos os filtros aplicados
+- Retornar 200 + lista com: `consulta_id`, `paciente_nome`, `medico_nome`, `especialidade`, `data`, `hora`, `status`
+
+---
+
+### controllerCancelarConsultaAdmin (PUT /admin/consultas/:consulta_id/cancelar)
+- Autenticação: JWT obrigatório (tipo: `admin`)
+- Params: `consulta_id`
+- Body: `motivo_cancelamento` (obrigatório)
+- Buscar consulta pelo ID
+- Verificar se status permite cancelamento (`agendada` ou `confirmada`)
+- Atualizar status para `cancelada` + salvar `motivo_cancelamento`
+- Enviar e-mail ao paciente informando cancelamento e motivo
+- Enviar e-mail ao médico informando cancelamento
+- Retornar 200 + mensagem de sucesso
+
+---
+
+### controllerRelatorioConsultas (GET /admin/relatorios/consultas)
+- Autenticação: JWT obrigatório (tipo: `admin`)
+- Query params: `mes` (obrigatório, formato: YYYY-MM), `medico_id` (opcional)
+- Calcular e retornar:
+  - Total de consultas no período
+  - Total por status (`agendada`, `confirmada`, `concluida`, `cancelada`)
+  - Total por especialidade
+  - Taxa de cancelamento (%)
+  - Médico com mais atendimentos no período
+- Retornar 200 + objeto com todos os dados do relatório
+
+---
+
+### controllerRelatorioMedicos (GET /admin/relatorios/medicos)
+- Autenticação: JWT obrigatório (tipo: `admin`)
+- Query params: `mes` (obrigatório, formato: YYYY-MM)
+- Para cada médico ativo, retornar:
+  - `medico_id`, `nome`, `especialidade`
+  - Total de consultas agendadas
+  - Total de consultas concluídas
+  - Total de consultas canceladas
+  - Taxa de ocupação (consultas realizadas / slots disponíveis %)
+- Ordenar por total de consultas concluídas (decrescente)
+- Retornar 200 + lista de médicos com métricas
+
+---
+
+## 📌 Resumo das Rotas
+
+| Método | Rota | Controller | Acesso |
+|--------|------|------------|--------|
+| POST | /login | controllerLogin | Público |
+| POST | /pacientes/registro | controllerCriarPaciente | Público |
+| GET | /pacientes/perfil | controllerPerfilPaciente | Paciente |
+| PUT | /pacientes/perfil | controllerAtualizarPaciente | Paciente |
+| PUT | /pacientes/senha | controllerAlterarSenhaPaciente | Paciente |
+| GET | /pacientes/horarios-disponiveis | controllerHorariosDisponiveis | Paciente |
+| POST | /pacientes/consultas | controllerAgendarConsulta | Paciente |
+| PUT | /pacientes/consultas/:id/cancelar | controllerCancelarConsultaPaciente | Paciente |
+| GET | /pacientes/consultas | controllerHistoricoConsultasPaciente | Paciente |
+| GET | /pacientes/consultas/:id | controllerDetalheConsultaPaciente | Paciente |
+| GET | /medicos/agenda | controllerAgendaMedico | Médico |
+| GET | /medicos/consultas | controllerPacientesAgendadosMedico | Médico |
+| GET | /medicos/consultas/:id | controllerDetalheConsultaMedico | Médico |
+| PUT | /medicos/consultas/:id/confirmar | controllerConfirmarConsulta | Médico |
+| PUT | /medicos/consultas/:id/concluir | controllerConcluirConsulta | Médico |
+| GET | /medicos/horarios | controllerListarHorariosMedico | Médico |
+| POST | /medicos/horarios | controllerDefinirHorarios | Médico |
+| PUT | /medicos/horarios/:id | controllerAtualizarHorario | Médico |
+| DELETE | /medicos/horarios/:id | controllerDeletarHorario | Médico |
+| GET | /medicos/perfil | controllerPerfilMedico | Médico |
+| PUT | /medicos/perfil | controllerAtualizarPerfilMedico | Médico |
+| POST | /admin/medicos | controllerCadastrarMedico | Admin |
+| GET | /admin/medicos | controllerListarMedicos | Admin |
+| GET | /admin/medicos/:id | controllerDetalheMedico | Admin |
+| PUT | /admin/medicos/:id | controllerAtualizarMedico | Admin |
+| PUT | /admin/medicos/:id/inativar | controllerInativarMedico | Admin |
+| GET | /admin/pacientes | controllerListarPacientes | Admin |
+| GET | /admin/pacientes/:id | controllerDetalhePaciente | Admin |
+| PUT | /admin/pacientes/:id | controllerAtualizarPacienteAdmin | Admin |
+| GET | /admin/consultas | controllerListarConsultasAdmin | Admin |
+| PUT | /admin/consultas/:id/cancelar | controllerCancelarConsultaAdmin | Admin |
+| GET | /admin/relatorios/consultas | controllerRelatorioConsultas | Admin |
+| GET | /admin/relatorios/medicos | controllerRelatorioMedicos | Admin |
