@@ -34,15 +34,15 @@
 ---
 
 ### controllerPerfilPaciente (GET /pacientes/perfil)
-- Autenticação: JWT obrigatório
+- Autenticação: JWT obrigatório (tipo: `paciente`)
 - Buscar dados do paciente pelo `id` extraído do token
 - Retornar 200 + dados completos do paciente (nome, email, telefone, data_nascimento, cpf)
 
 ---
 
 ### controllerAtualizarPaciente (PUT /pacientes/perfil)
-- Autenticação: JWT obrigatório (tipo: `paciente`)
 - Body: `nome`, `telefone`, `data_nascimento` (campos opcionais, pelo menos 1 obrigatório)
+- Autenticação: JWT obrigatório (tipo: `paciente`)
 - Não permitir atualização de email, CPF ou senha por esta rota
 - Atualizar dados na tabela `pacientes` e `usuarios` pelo `id` do token
 - Retornar 200 + dados atualizados
@@ -50,10 +50,10 @@
 ---
 
 ### controllerAlterarSenhaPaciente (PUT /pacientes/senha)
-- Autenticação: JWT obrigatório (tipo: `paciente`)
 - Body: `senha_atual`, `nova_senha`, `confirmar_nova_senha`
+- Autenticação: JWT obrigatório (tipo: `paciente`)
+- Validar tamanho mínimo da `nova_senha` (mínimo 6 caracteres)
 - Validar que `nova_senha` e `confirmar_nova_senha` são iguais
-- Validar tamanho mínimo da `nova_senha` (mínimo 8 caracteres)
 - Buscar senha atual no banco pelo `id` do token
 - Comparar `senha_atual` com bcrypt
 - Hashear `nova_senha` com bcrypt
