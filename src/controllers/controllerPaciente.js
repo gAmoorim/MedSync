@@ -1,4 +1,4 @@
-const { queryBuscarPacientePeloCpf, queryPerfilPaciente, queryAtualizarPaciente, queryBuscarPacientePeloId, queryBuscarSenhaAtualPaciente, queryAtualizarSenhaPaciente } = require("../database/querys/queryPacientes")
+const { queryBuscarPacientePeloCpf, queryPerfilPaciente, queryAtualizarPaciente, queryBuscarPacientePeloId, queryBuscarSenhaAtualPaciente, queryAtualizarSenhaPaciente, queryHorariosDisponiveis } = require("../database/querys/queryPacientes")
 const { queryBuscarUsuarioPeloEmail, queryCriarPaciente } = require("../database/querys/queryUsuarios")
 const { validarEmail, validarTelefone, validarCPF } = require("../utils/validations")
 const bcrypt = require('bcrypt')
@@ -150,10 +150,32 @@ const controllerAlterarSenhaPaciente = async (req, res) => {
     }
 }
 
+const controllerHorariosDisponiveis = async (req, res) => {
+    const { data, especialidade, medico_id } = req.query
+
+    if (!data) {
+        return res.status(400).json({ error: 'O campo data é obrigatório.'})
+    }
+
+    if (new Date(data) < new Date()) {
+        return res.status()
+    }
+
+    try {
+        const horarios = await queryHorariosDisponiveis(data, especialidade, medico_id)
+
+        return res.status(200).json({ mensagem: 'Horários disponíveis', horarios})
+    } catch (error) {
+        console.error('Ocorreu um erro ao buscar horários?', error)
+        return res.status(500).json({ error: `Erro ao buscar horários: ${error.message}`})
+    }
+}
+
 
 module.exports = {
     controllerCriarPaciente,
     controllerPerfilPaciente,
     controllerAtualizarPaciente,
-    controllerAlterarSenhaPaciente
+    controllerAlterarSenhaPaciente,
+    controllerHorariosDisponiveis
 }
