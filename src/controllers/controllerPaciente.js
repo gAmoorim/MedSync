@@ -158,7 +158,7 @@ const controllerHorariosDisponiveis = async (req, res) => {
     }
 
     if (new Date(data) < new Date()) {
-        return res.status()
+        return res.status(400).json({ error: 'Não pode ser uma data passada'})
     }
 
     try {
