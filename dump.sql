@@ -1,5 +1,8 @@
 -- Banco de Dados
 
+create DATABASE medsync;
+
+
 -- =======================
 -- USUARIOS
 -- =======================
