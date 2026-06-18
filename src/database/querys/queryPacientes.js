@@ -80,9 +80,6 @@ const queryVerificarConsultaPaciente = async (pacienteId, data, horario) => {
 }
 
 const queryAgendarConsulta = async (pacienteId, medicoId, horarioId, data, hora_inicio, intervalo_minutos, observacoes) => {
-    console.log('hora_inicio:', hora_inicio)
-    console.log('intervalo_minutos:', intervalo_minutos)
-
     const [h, m] = hora_inicio.split(':').map(Number)
     const totalMinutos = h * 60 + m + intervalo_minutos
     const hora_fim = `${String(Math.floor(totalMinutos / 60)).padStart(2, '0')}:${String(totalMinutos % 60).padStart(2, '0')}`
