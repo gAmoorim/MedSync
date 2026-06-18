@@ -77,6 +77,7 @@
 ### controllerAgendarConsulta (POST /pacientes/consultas)
 - Autenticação: JWT obrigatório (tipo: `paciente`)
 - Body: `horario_id`, `observacoes` (opcional)
+- Query: data
 - Validar campo obrigatório `horario_id`
 - Verificar se horário existe e pertence a um médico ativo
 - Verificar se horário ainda está disponível (sem consulta agendada/confirmada no mesmo slot)

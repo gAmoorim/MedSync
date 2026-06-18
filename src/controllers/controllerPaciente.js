@@ -1,4 +1,5 @@
-const { queryBuscarPacientePeloCpf, queryPerfilPaciente, queryAtualizarPaciente, queryBuscarPacientePeloId, queryBuscarSenhaAtualPaciente, queryAtualizarSenhaPaciente, queryHorariosDisponiveis } = require("../database/querys/queryPacientes")
+const { queryHorariosDisponiveis } = require("../database/querys/queryHorarioDisp")
+const { queryBuscarPacientePeloCpf, queryPerfilPaciente, queryAtualizarPaciente, queryBuscarSenhaAtualPaciente, queryAtualizarSenhaPaciente, queryVerificarConsultaPaciente, queryVerificarSlotDisponivel, queryAgendarConsulta, queryVerificarHorario, queryBuscarPacientePorUsuarioId } = require("../database/querys/queryPacientes")
 const { queryBuscarUsuarioPeloEmail, queryCriarPaciente } = require("../database/querys/queryUsuarios")
 const { validarEmail, validarTelefone, validarCPF } = require("../utils/validations")
 const bcrypt = require('bcrypt')
@@ -157,8 +158,10 @@ const controllerHorariosDisponiveis = async (req, res) => {
         return res.status(400).json({ error: 'O campo data é obrigatório.'})
     }
 
-    if (new Date(data) < new Date()) {
-        return res.status(400).json({ error: 'Não pode ser uma data passada'})
+    const hoje = new Date().toISOString().split('T')[0]
+
+    if (data < hoje) {
+        return res.status(400).json({ error: 'Não pode ser uma data passada' })
     }
 
     try {
@@ -166,8 +169,64 @@ const controllerHorariosDisponiveis = async (req, res) => {
 
         return res.status(200).json({ mensagem: 'Horários disponíveis', horarios})
     } catch (error) {
-        console.error('Ocorreu um erro ao buscar horários?', error)
+        console.error('Ocorreu um erro ao buscar horários', error)
         return res.status(500).json({ error: `Erro ao buscar horários: ${error.message}`})
+    }
+}
+
+const controllerAgendarConsulta = async (req, res) => {
+    const { horario_id, observacoes } = req.body
+    const { data, hora_inicio } = req.query
+
+    if (!data || !horario_id || !hora_inicio) {
+        return res.status(400).json({ error: 'horario_id é obrigatório'})
+    }
+
+    try {
+        const usuarioId = req.usuario.id
+        const paciente = await queryBuscarPacientePorUsuarioId(usuarioId)
+
+        if (!paciente) {
+            return res.status(400).json({ error: 'Paciente não encontrado' })
+        }
+
+        const pacienteId = paciente.id
+        
+        const horario = await queryVerificarHorario(horario_id)
+
+        if (!horario) {
+            return res.status(400).json({ error: 'Horário indisponivel'})
+        }
+
+        const pacienteOcupado = await queryVerificarConsultaPaciente(pacienteId, data, hora_inicio)
+
+        if (pacienteOcupado) {
+            return res.status(409).json({ error: 'Você já possui uma consulta neste horário' })
+        }
+
+        const slotOcupado = await queryVerificarSlotDisponivel(horario.medico_id, data, hora_inicio)
+
+        if (slotOcupado) {
+            return res.status(409).json({ error: 'Este horário já está ocupado' })
+        }
+
+        const consulta = await queryAgendarConsulta(
+            pacienteId,
+            horario.medico_id,
+            horario_id,
+            data,
+            hora_inicio,
+            horario.intervalo_minutos,
+            observacoes
+        )
+
+        // ENVIAR EMAIL CONFIRMANDO CONSULTA
+
+        return res.status(201).json({ mensagem: 'consulta agendada', consulta})
+
+    } catch (error) {
+        console.error('Ocorreu um erro ao agendar consulta:', error)
+        return res.status(500).json({ error: `Erro ao agendar consulta: ${error.message}`})
     }
 }
 
@@ -177,5 +236,6 @@ module.exports = {
     controllerPerfilPaciente,
     controllerAtualizarPaciente,
     controllerAlterarSenhaPaciente,
-    controllerHorariosDisponiveis
+    controllerHorariosDisponiveis,
+    controllerAgendarConsulta
 }
