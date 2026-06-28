@@ -1,5 +1,6 @@
+const { queryVerificarSlotDisponivel, queryVerificarConsultaPaciente, queryAgendarConsulta, queryBuscarConsultaPeloId, queryCancelarConsulta } = require("../database/querys/queryConsultas")
 const { queryHorariosDisponiveis } = require("../database/querys/queryHorarioDisp")
-const { queryBuscarPacientePeloCpf, queryPerfilPaciente, queryAtualizarPaciente, queryBuscarSenhaAtualPaciente, queryAtualizarSenhaPaciente, queryVerificarConsultaPaciente, queryVerificarSlotDisponivel, queryAgendarConsulta, queryVerificarHorario, queryBuscarPacientePorUsuarioId } = require("../database/querys/queryPacientes")
+const { queryBuscarPacientePeloCpf, queryPerfilPaciente, queryAtualizarPaciente, queryBuscarSenhaAtualPaciente, queryAtualizarSenhaPaciente, queryVerificarHorario, queryBuscarPacientePorUsuarioId } = require("../database/querys/queryPacientes")
 const { queryBuscarUsuarioPeloEmail, queryCriarPaciente } = require("../database/querys/queryUsuarios")
 const { validarEmail, validarTelefone, validarCPF } = require("../utils/validations")
 const bcrypt = require('bcrypt')
@@ -230,6 +231,52 @@ const controllerAgendarConsulta = async (req, res) => {
     }
 }
 
+const controllerCancelarConsultaPaciente = async (req, res) => {
+    const {consulta_id} = req.params
+
+    if (!consulta_id) {
+        return res.status(400).json({ error: 'consulta_id é obrigatório'})
+    }
+
+    try {
+        const usuarioLogado = req.usuario.id
+        const paciente = await queryBuscarPacientePorUsuarioId(usuarioLogado)
+
+        const consulta = await queryBuscarConsultaPeloId(consulta_id)
+
+        if (!consulta) {
+            return res.status(404).json({ error: 'Nenhuma consulta encontrada'})
+        }
+
+        if (consulta.paciente_id !== paciente.id) {
+            return res.status(403).json({ error: 'Você não tem permissão para cancelar esta consulta'})
+        }
+
+        const statusAtual = consulta.status
+
+        if (statusAtual !== "agendada" && statusAtual !== "confirmada") {
+            return res.status(400).json({ error: "a consulta só pode ser cancelada se o status dela for confirmada ou agendada"})
+        }
+
+        const agora = new Date()
+        const dataHoraConsula = new Date(`${consulta.data}T${consulta.hora_inicio}`)
+
+        const diferencaHoras = (dataHoraConsula - agora) / (1000 * 60 * 60)
+
+        if (diferencaHoras < 2) {
+            return res.status(400).json({ error: 'Não é possível cancelar com menos de 2 horas de antecedência'})
+        }
+
+        await queryCancelarConsulta(consulta_id)
+
+        return res.status(200).json({ mensagem: 'Consulta cancelada com sucesso' })
+
+        //Enviar e-mail de confirmação de cancelamento ao paciente
+    } catch (error) {
+        console.error('Ocorreu um erro cancelar a consulta:', error)
+        return res.status(500).json({ error: `Erro ao cancelar a consulta: ${error.message}`})
+    }
+}
 
 module.exports = {
     controllerCriarPaciente,
@@ -237,5 +284,6 @@ module.exports = {
     controllerAtualizarPaciente,
     controllerAlterarSenhaPaciente,
     controllerHorariosDisponiveis,
-    controllerAgendarConsulta
+    controllerAgendarConsulta,
+    controllerCancelarConsultaPaciente
 }
