@@ -1,4 +1,4 @@
-const { queryVerificarSlotDisponivel, queryVerificarConsultaPaciente, queryAgendarConsulta, queryBuscarConsultaPeloId, queryCancelarConsulta } = require("../database/querys/queryConsultas")
+const { queryVerificarSlotDisponivel, queryVerificarConsultaPaciente, queryAgendarConsulta, queryBuscarConsultaPeloId, queryCancelarConsulta, queryHistoricoConsultas } = require("../database/querys/queryConsultas")
 const { queryHorariosDisponiveis } = require("../database/querys/queryHorarioDisp")
 const { queryBuscarPacientePeloCpf, queryPerfilPaciente, queryAtualizarPaciente, queryBuscarSenhaAtualPaciente, queryAtualizarSenhaPaciente, queryVerificarHorario, queryBuscarPacientePorUsuarioId } = require("../database/querys/queryPacientes")
 const { queryBuscarUsuarioPeloEmail, queryCriarPaciente } = require("../database/querys/queryUsuarios")
@@ -278,6 +278,30 @@ const controllerCancelarConsultaPaciente = async (req, res) => {
     }
 }
 
+const controllerHistoricoConsultasPaciente = async (req, res) => {
+    const { status, pagina = 1, limite = 10 } = req.query
+    const usuarioId = req.usuario.id
+
+    try {
+        const paciente = await queryBuscarPacientePorUsuarioId(usuarioId)
+
+        if (!paciente) {
+            return res.status(404).json({ error: 'Nenhum paciente encontrado com esse id'})
+        }
+        
+        const consultas = await queryHistoricoConsultas(paciente.id, status, pagina, limite)
+
+        if (consultas.length === 0) {
+            return res.status(404).json({ error: 'Nenhuma consulta encontrada.'})
+        }
+
+        return res.status(200).json({ mensagem: "consultas do paciente", consultas})
+    } catch (error) {
+        console.error('Ocorreu um erro ao listar o historico:', error)
+        return res.status(500).json({ error: `Erro ao listar o historico: ${error.message}`})
+    }
+}
+
 module.exports = {
     controllerCriarPaciente,
     controllerPerfilPaciente,
@@ -285,5 +309,6 @@ module.exports = {
     controllerAlterarSenhaPaciente,
     controllerHorariosDisponiveis,
     controllerAgendarConsulta,
-    controllerCancelarConsultaPaciente
+    controllerCancelarConsultaPaciente,
+    controllerHistoricoConsultasPaciente
 }

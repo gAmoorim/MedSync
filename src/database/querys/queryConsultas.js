@@ -49,10 +49,39 @@ const queryCancelarConsulta = async (consulta_id) => {
     .update({ status: 'cancelada'})
 }
 
+const queryHistoricoConsultas = async (pacienteId, status, pagina, limite) => {
+    const offset = (pagina - 1) * limite
+
+    const query = knex('consultas as c')
+        .join('medicos as m', 'c.medico_id', 'm.id')
+        .join('usuarios as u', 'm.usuario_id', 'u.id')
+        .join('especialidades as e', 'm.especialidade_id', 'e.id')
+        .where('c.paciente_id', pacienteId)
+        .select(
+            'c.id as consulta_id',
+            'u.nome as medico_nome',
+            'e.nome as especialidade',
+            'c.data',
+            'c.hora_inicio',
+            'c.status',
+            'c.observacoes'
+        )
+        .orderBy('c.data', 'desc')
+        .limit(limite)
+        .offset(offset)
+
+    if (status) {
+        query.where('c.status', status)
+    }
+
+    return await query
+}
+
 module.exports = {
     queryVerificarSlotDisponivel,
     queryVerificarConsultaPaciente,
     queryAgendarConsulta,
     queryBuscarConsultaPeloId,
-    queryCancelarConsulta
+    queryCancelarConsulta,
+    queryHistoricoConsultas
 }
