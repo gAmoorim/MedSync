@@ -77,11 +77,32 @@ const queryHistoricoConsultas = async (pacienteId, status, pagina, limite) => {
     return await query
 }
 
+const queryDetalheConsultaPaciente = async (consulta_id) => {
+    return await knex('consultas as c')
+        .join('medicos as m', 'c.medico_id', 'm.id')
+        .join('usuarios as u', 'm.usuario_id', 'u.id')
+        .join('especialidades as e', 'm.especialidade_id', 'e.id')
+        .where('c.id', consulta_id)
+        .select(
+            'c.id as consulta_id',
+            'u.nome as medico_nome',
+            'e.nome as especialidade',
+            'm.crm',
+            'c.data',
+            'c.hora_inicio as hora',
+            'c.status',
+            'c.observacoes',
+            'c.anotacoes_medico'
+        )
+        .first()
+}
+
 module.exports = {
     queryVerificarSlotDisponivel,
     queryVerificarConsultaPaciente,
     queryAgendarConsulta,
     queryBuscarConsultaPeloId,
     queryCancelarConsulta,
-    queryHistoricoConsultas
+    queryHistoricoConsultas,
+    queryDetalheConsultaPaciente
 }

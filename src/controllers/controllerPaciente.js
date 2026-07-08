@@ -1,4 +1,4 @@
-const { queryVerificarSlotDisponivel, queryVerificarConsultaPaciente, queryAgendarConsulta, queryBuscarConsultaPeloId, queryCancelarConsulta, queryHistoricoConsultas } = require("../database/querys/queryConsultas")
+const { queryVerificarSlotDisponivel, queryVerificarConsultaPaciente, queryAgendarConsulta, queryBuscarConsultaPeloId, queryCancelarConsulta, queryHistoricoConsultas, queryDetalheConsultaPaciente } = require("../database/querys/queryConsultas")
 const { queryHorariosDisponiveis } = require("../database/querys/queryHorarioDisp")
 const { queryBuscarPacientePeloCpf, queryPerfilPaciente, queryAtualizarPaciente, queryBuscarSenhaAtualPaciente, queryAtualizarSenhaPaciente, queryVerificarHorario, queryBuscarPacientePorUsuarioId } = require("../database/querys/queryPacientes")
 const { queryBuscarUsuarioPeloEmail, queryCriarPaciente } = require("../database/querys/queryUsuarios")
@@ -302,6 +302,43 @@ const controllerHistoricoConsultasPaciente = async (req, res) => {
     }
 }
 
+const controllerDetalheConsultaPaciente = async (req,res) => {
+    const { consulta_id } = req.params
+
+    if (!consulta_id) {
+        return res.status(400).json({ error: 'o id da consulta é obrigatório'})
+    }
+
+    try {
+        const usuarioId = req.usuario.id
+
+        const consulta = await queryBuscarConsultaPeloId(consulta_id)
+
+        if (!consulta) {
+            return res.status(404).json({ error: 'Nenhuma consulta encontrada com esse id.'})
+        }
+
+        const buscarPaciente = await queryBuscarPacientePorUsuarioId(usuarioId)
+
+        if (!buscarPaciente) {
+            return res.status(404).json({ error: 'Paciente não encontrado.' })
+        }
+
+        const idPaciente = buscarPaciente.id
+
+        if (consulta.paciente_id !== idPaciente) {
+            return res.status(403).json({ error: 'Essa consulta não pertence ao usuario logado.'})
+        }
+
+        const detalheConsulta = await queryDetalheConsultaPaciente(consulta_id)
+
+        return res.status(200).json({ mensagem: 'Detalhes da consulta', consulta: detalheConsulta})
+    } catch (error) {
+        console.error('Ocorreu um erro ao detalhar a consulta:', error)
+        return res.status(500).json({ error: `Erro ao detalhar a consulta: ${error.message}`})
+    }
+}
+
 module.exports = {
     controllerCriarPaciente,
     controllerPerfilPaciente,
@@ -310,5 +347,6 @@ module.exports = {
     controllerHorariosDisponiveis,
     controllerAgendarConsulta,
     controllerCancelarConsultaPaciente,
-    controllerHistoricoConsultasPaciente
+    controllerHistoricoConsultasPaciente,
+    controllerDetalheConsultaPaciente
 }

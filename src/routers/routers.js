@@ -1,6 +1,6 @@
 const express = require('express')
 const { controllerLoginUsuario } = require('../controllers/controllerLogin')
-const { controllerCriarPaciente, controllerPerfilPaciente, controllerAtualizarPaciente, controllerAlterarSenhaPaciente, controllerHorariosDisponiveis, controllerAgendarConsulta, controllerCancelarConsultaPaciente, controllerHistoricoConsultasPaciente } = require('../controllers/controllerPaciente')
+const { controllerCriarPaciente, controllerPerfilPaciente, controllerAtualizarPaciente, controllerAlterarSenhaPaciente, controllerHorariosDisponiveis, controllerAgendarConsulta, controllerCancelarConsultaPaciente, controllerHistoricoConsultasPaciente, controllerDetalheConsultaPaciente } = require('../controllers/controllerPaciente')
 
 const auth = require('../middlewares/auth')
 
@@ -17,5 +17,6 @@ routers.get('/pacientes/horarios-disponiveis', auth, controllerHorariosDisponive
 routers.post('/pacientes/consultas', auth, controllerAgendarConsulta) //ENVIAR EMAIL CONFIRMANDO CONSULTA
 routers.put('/pacientes/consultas/:consulta_id/cancelar', auth, controllerCancelarConsultaPaciente) // Enviar e-mail de confirmação de cancelamento ao paciente
 routers.get('/pacientes/consultas', auth, controllerHistoricoConsultasPaciente)
+routers.get('/pacientes/consultas/:consulta_id', auth, controllerDetalheConsultaPaciente)
 
 module.exports = routers
