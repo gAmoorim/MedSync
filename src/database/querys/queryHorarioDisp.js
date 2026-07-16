@@ -35,7 +35,6 @@ const queryHorariosDisponiveis = async (data, especialidade, medico_id) => {
 
     const horarios = await query
 
-    // busca todos os slots ocupados para essa data
     const medicoIds = horarios.map(h => h.medico_id)
 
     const consultasOcupadas = await knex('consultas')
@@ -44,19 +43,22 @@ const queryHorariosDisponiveis = async (data, especialidade, medico_id) => {
         .whereIn('status', ['agendada', 'confirmada'])
         .select('medico_id', 'hora_inicio')
 
-    // monta um Set para verificação rápida: "medico_id-hora_inicio"
     const ocupados = new Set(
         consultasOcupadas.map(c => `${c.medico_id}-${c.hora_inicio.substring(0, 5)}`)
     )
+
+    const hojeStr = new Date().toISOString().split('T')[0]
+    const agora = new Date()
+    const minutosAgora = agora.getHours() * 60 + agora.getMinutes()
 
     const slots = []
 
     for (const horario of horarios) {
         const [hInicio, mInicio] = horario.hora_inicio.split(':').map(Number)
-        const [hFim, mFim] = horario.hora_fim.split(':').map(Number)
+        const [hFim] = horario.hora_fim.split(':').map(Number)
 
         let atual = hInicio * 60 + mInicio
-        const fim = hFim * 60 + mFim
+        const fim = hFim * 60 + Number(horario.hora_fim.split(':')[1])
 
         while (atual + horario.intervalo_minutos <= fim) {
             const proximoSlot = atual + horario.intervalo_minutos
@@ -65,6 +67,11 @@ const queryHorariosDisponiveis = async (data, especialidade, medico_id) => {
             const horaFim = `${String(Math.floor(proximoSlot / 60)).padStart(2, '0')}:${String(proximoSlot % 60).padStart(2, '0')}`
 
             const chave = `${horario.medico_id}-${horaInicio}`
+
+            if (data === hojeStr && atual <= minutosAgora) {
+                atual = proximoSlot
+                continue
+            }
 
             if (!ocupados.has(chave)) {
                 slots.push({
