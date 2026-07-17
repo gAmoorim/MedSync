@@ -75,9 +75,17 @@ const queryDetalheConsultaMedico = async (consulta_id) => {
         .first()
 }
 
+const queryConcluirConsulta = async (consulta_id, anotacoes_medico) => {
+    return await knex('consultas')
+    .where({id: consulta_id})
+    .update({ status: 'concluida', anotacoes_medico, data_hora_conclusao: new Date() })
+    .returning(['id', 'status', 'anotacoes_medico', 'data_hora_conclusao'])
+}
+
 module.exports = {
     queryAgendaMedico,
     queryBuscarMedicoPorUsuarioId,
     queryPacientesAgendadosMedico,
-    queryDetalheConsultaMedico
+    queryDetalheConsultaMedico,
+    queryConcluirConsulta
 }

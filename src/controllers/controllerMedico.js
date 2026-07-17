@@ -1,4 +1,4 @@
-const { queryAgendaMedico, queryBuscarMedicoPorUsuarioId, queryPacientesAgendadosMedico, queryDetalheConsultaMedico } = require("../database/querys/queryMedico")
+const { queryAgendaMedico, queryBuscarMedicoPorUsuarioId, queryPacientesAgendadosMedico, queryDetalheConsultaMedico, queryConcluirConsulta } = require("../database/querys/queryMedico")
 
 
 const controllerAgendaMedica = async (req, res) => {
@@ -94,8 +94,47 @@ const controllerDetalheConsultaMedico = async (req,res) => {
     }
 }
 
+const controllerConcluirConsulta = async (req, res) => {
+    const {consulta_id} = req.params
+    const {anotacoes_medico} = req.body
+
+    if (!consulta_id) {
+        return res.status(400).json({ error: 'Erro ao obter o id da consulta'})
+    }
+    
+    try {
+        const usuarioId = req.usuario.id
+
+        if (!usuarioId) {
+            return res.status(400).json({ error: 'Erro ao obter o id do médico logado'})
+        }
+        const medico = await queryBuscarMedicoPorUsuarioId(usuarioId)
+        const consulta = await queryDetalheConsultaMedico(consulta_id)
+
+        if (!consulta) {
+            return res.status(404).json({ error: 'Nenhuma consulta encontrada'})
+        }
+        
+        if (medico.id !== consulta.medico_id) {
+            return res.status(400).json({ error: 'A consulta informada não pertence ao médico logado'})
+        }
+
+        if (consulta.status !== 'agendada' && consulta.status !== 'confirmada') {
+            return res.status(400).json({ error: 'A consulta só pode ser concluída se o status for agendada ou confirmada'})
+        }
+
+        const consulta_concluida = await queryConcluirConsulta(consulta_id, anotacoes_medico)
+
+        return res.status(200).json({ mensagem: 'consulta concluída', consulta_concluida})
+    } catch (error) {
+        console.error('Ocorreu um erro ao concluir a consulta:', error)
+        return res.status(500).json({ error: `Erro ao concluir a consulta: ${error.message}` })
+    }
+}
+
 module.exports = {
     controllerAgendaMedica,
     controllerPacientesAgendadosMedico,
-    controllerDetalheConsultaMedico
+    controllerDetalheConsultaMedico,
+    controllerConcluirConsulta
 }
