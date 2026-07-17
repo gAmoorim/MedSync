@@ -1,7 +1,7 @@
 const express = require('express')
 const { controllerLoginUsuario } = require('../controllers/controllerLogin')
 const { controllerCriarPaciente, controllerPerfilPaciente, controllerAtualizarPaciente, controllerAlterarSenhaPaciente, controllerHorariosDisponiveis, controllerAgendarConsulta, controllerCancelarConsultaPaciente, controllerHistoricoConsultasPaciente, controllerDetalheConsultaPaciente } = require('../controllers/controllerPaciente')
-const { controllerAgendaMedica, controllerPacientesAgendadosMedico } = require('../controllers/controllerMedico')
+const { controllerAgendaMedica, controllerPacientesAgendadosMedico, controllerDetalheConsultaMedico } = require('../controllers/controllerMedico')
 
 const authPaciente = require('../middlewares/authPaciente')
 const authMedico = require('../middlewares/authMedico')
@@ -25,6 +25,6 @@ routers.get('/pacientes/consultas/:consulta_id', auth, authPaciente, controllerD
 //rotas direcionadas a medicos
 routers.get('/medicos/agenda', auth, authMedico, controllerAgendaMedica)
 routers.get('/medicos/consultas', auth, authMedico, controllerPacientesAgendadosMedico)
-
+routers.get('/medicos/consultas/:consulta_id', auth, authMedico, controllerDetalheConsultaMedico)
 
 module.exports = routers

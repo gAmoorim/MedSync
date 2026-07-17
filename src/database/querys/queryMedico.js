@@ -54,8 +54,30 @@ const queryPacientesAgendadosMedico = async (medicoId, data, status, pagina, lim
     return await query
 }
 
+const queryDetalheConsultaMedico = async (consulta_id) => {
+    return await knex('consultas as c')
+        .join('pacientes as p', 'c.paciente_id', 'p.id')
+        .join('usuarios as u', 'p.usuario_id', 'u.id')
+        .where('c.id', consulta_id)
+        .select(
+            'c.id as consulta_id',
+            'u.nome as paciente_nome',
+            'p.cpf as paciente_cpf',
+            'p.data_nascimento as paciente_data_nascimento',
+            'p.telefone as paciente_telefone',
+            'c.data',
+            'c.hora_inicio as hora',
+            'c.status',
+            'c.observacoes',
+            'c.anotacoes_medico',
+            'c.medico_id'
+        )
+        .first()
+}
+
 module.exports = {
     queryAgendaMedico,
     queryBuscarMedicoPorUsuarioId,
-    queryPacientesAgendadosMedico
+    queryPacientesAgendadosMedico,
+    queryDetalheConsultaMedico
 }
