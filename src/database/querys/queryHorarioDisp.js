@@ -1,7 +1,8 @@
 const knex = require('../connection')
 
 const queryHorariosDisponiveis = async (data, especialidade, medico_id) => {
-    const diaSemana = new Date(data + 'T00:00:00').getDay()
+    const [ano, mes, dia] = data.split('-').map(Number)
+    const diaSemana = new Date(ano, mes - 1, dia).getDay()
 
     const query = knex('horarios_atendimento as h')
         .join('medicos as m', 'h.medico_id', 'm.id')
