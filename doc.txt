@@ -181,7 +181,7 @@
 
 ### controllerDefinirHorarios (POST /medicos/horarios)
 - Autenticação: JWT obrigatório (tipo: `medico`)
-- Body: `dia_semana` (0-6), `hora_inicio`, `hora_fim`, `intervalo_minutos` (ex: 30), `data_inicio_vigencia`, `data_fim_vigencia` (opcional)
+- Body: `dias_semana` (0-6), `hora_inicio`, `hora_fim`, `intervalo_minutos` (ex: 30), `data_inicio_vigencia`, `data_fim_vigencia` (opcional)
 - Validar campos obrigatórios
 - Validar que `hora_fim` > `hora_inicio`
 - Validar que `intervalo_minutos` é positivo e gera ao menos 1 slot
