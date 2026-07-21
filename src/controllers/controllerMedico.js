@@ -1,4 +1,4 @@
-const { queryAgendaMedico, queryBuscarMedicoPorUsuarioId, queryPacientesAgendadosMedico, queryDetalheConsultaMedico, queryConcluirConsulta } = require("../database/querys/queryMedico")
+const { queryAgendaMedico, queryBuscarMedicoPorUsuarioId, queryPacientesAgendadosMedico, queryDetalheConsultaMedico, queryConcluirConsulta, queryConfirmarConsulta } = require("../database/querys/queryMedico")
 
 
 const controllerAgendaMedica = async (req, res) => {
@@ -132,9 +132,45 @@ const controllerConcluirConsulta = async (req, res) => {
     }
 }
 
+const controllerConfirmarConsulta = async (req, res) => {
+    const {consulta_id} = req.params
+
+    if (!consulta_id) {
+        return res.status(400).json({ error: 'Erro ao obter o id da consulta'})
+    }
+
+    try {
+        const usuarioId = req.usuario.id
+
+        if (!usuarioId) {
+            return res.status(400).json({ error: 'Erro ao obter o id do médico logado'})
+        }
+
+        const medico = await queryBuscarMedicoPorUsuarioId(usuarioId)
+        const consulta = await queryDetalheConsultaMedico(consulta_id)
+
+        if (medico.id !== consulta.medico_id) {
+            return res.status(400).json({ error: 'A consulta informada não pertence ao médico logado'})
+        }
+
+        if (consulta.status !== 'agendada') {
+            return res.status(400).json({ error: 'A consulta só pode ser confirmada se o status atual for agendada'})
+        }
+
+        const consulta_confirmada = await queryConfirmarConsulta(consulta_id)
+        // enviar email de confirmação ao paciente
+
+        return res.status(200).json({ mensagem: 'Consulta confirmada', consulta_confirmada})
+    } catch (error) {
+        console.error('Ocorreu um erro ao concluir a consulta:', error)
+        return res.status(500).json({ error: `Erro ao concluir a consulta: ${error.message}` })
+    }
+}
+
 module.exports = {
     controllerAgendaMedica,
     controllerPacientesAgendadosMedico,
     controllerDetalheConsultaMedico,
-    controllerConcluirConsulta
+    controllerConcluirConsulta,
+    controllerConfirmarConsulta
 }
