@@ -90,11 +90,45 @@ const queryConfirmarConsulta = async (consulta_id) => {
     .returning(['id', 'status', 'atualizado_em'])
 }
 
+const queryVerificarConflitoHorario = async (medicoId, dia_semana, hora_inicio, hora_fim) => {
+    return await knex('horarios_atendimento')
+    .where('medico_id', medicoId)
+    .where('dia_semana', dia_semana)
+    .where('ativo', true)
+    .where(function () {
+        this.whereBetween('hora_inicio', [hora_inicio, hora_fim])
+            .orWhereBetween('hora_fim', [hora_inicio, hora_fim])
+            .orWhere(function () {
+                this.where('hora_inicio' ,'<=', hora_inicio)
+                    .andWhere('hora_fim', '>=', hora_fim)
+            })    
+    })
+    .first()
+}
+
+const queryDefinirHorarios = async (medicoId, dias_semana, hora_inicio, hora_fim, intervalo_minutos, data_inicio_vigencia, data_fim_vigencia) => {
+    const inserts = dias_semana.map(dia => ({
+        medico_id: medicoId,
+        dia_semana: dia,
+        hora_inicio,
+        hora_fim,
+        intervalo_minutos,
+        data_inicio_vigencia,
+        data_fim_vigencia
+    }))
+
+    return await knex('horarios_atendimento')
+        .insert(inserts)
+        .returning(['id', 'dia_semana', 'hora_inicio', 'hora_fim', 'intervalo_minutos', 'data_inicio_vigencia', 'data_fim_vigencia'])
+}
+
 module.exports = {
     queryAgendaMedico,
     queryBuscarMedicoPorUsuarioId,
     queryPacientesAgendadosMedico,
     queryDetalheConsultaMedico,
     queryConcluirConsulta,
-    queryConfirmarConsulta
+    queryConfirmarConsulta,
+    queryVerificarConflitoHorario,
+    queryDefinirHorarios
 }

@@ -1,4 +1,4 @@
-const { queryAgendaMedico, queryBuscarMedicoPorUsuarioId, queryPacientesAgendadosMedico, queryDetalheConsultaMedico, queryConcluirConsulta, queryConfirmarConsulta } = require("../database/querys/queryMedico")
+const { queryAgendaMedico, queryBuscarMedicoPorUsuarioId, queryPacientesAgendadosMedico, queryDetalheConsultaMedico, queryConcluirConsulta, queryConfirmarConsulta, queryVerificarConflitoHorario, queryDefinirHorarios } = require("../database/querys/queryMedico")
 
 
 const controllerAgendaMedica = async (req, res) => {
@@ -167,10 +167,60 @@ const controllerConfirmarConsulta = async (req, res) => {
     }
 }
 
+const controllerDefinirHorario = async (req, res) => {
+    const { dias_semana, hora_inicio, hora_fim, intervalo_minutos, data_inicio_vigencia, data_fim_vigencia } = req.body
+
+    if (!dias_semana || !hora_inicio || !hora_fim || !intervalo_minutos || !data_inicio_vigencia) {
+        return res.status(400).json({ error: 'Preencha os campos obrigatórios'})
+    }
+
+    if (hora_fim <= hora_inicio) {
+        return res.status(400).json({ error: 'A hora de fim não pode ser menor ou igual à hora de inicio'})
+    }
+
+    if (intervalo_minutos <= 0) {
+        return res.status(400).json({ error: 'O intervalo deve ser maior que zero'})
+    }
+
+    const [hInicio, mInicio] = hora_inicio.split(':').map(Number)
+    const [hFim, mFim] = hora_fim.split(':').map(Number)
+    const totalMinutos = (hFim * 60 + mFim) - (hInicio * 60 + mInicio)
+
+    if (totalMinutos < intervalo_minutos) {
+        return res.status(400).json9({ error: 'O intervalo informado não gera nenhum slot de atendimento'})
+    }
+
+    try {
+        const usuarioId = req.usuario.id
+
+        if (!usuarioId) {
+            return res.status(400).json({ error: 'Erro ao obter o id do médico logado'})
+        }
+
+        const medico = await queryBuscarMedicoPorUsuarioId(usuarioId)
+
+        for (const dia of dias_semana) {
+            const conflito = await queryVerificarConflitoHorario(medico.id, dia, hora_inicio, hora_fim)
+
+            if (conflito) {
+                return res.status(409).json({ error: `Já existe um horário que conflita com o dia ${dia}`})
+            }
+        }
+
+        const horarios = await queryDefinirHorarios(medico.id, dias_semana, hora_inicio, hora_fim, intervalo_minutos, data_inicio_vigencia, data_fim_vigencia)
+
+        return res.status(201).json({ mensagem: 'Horários criados com sucesso', horarios})
+    } catch (error) {
+        console.error('Ocorreu um erro ao definir horários:', error)
+        return res.status(500).json({ error: `Erro ao definir horários: ${error.message}` })
+    }
+}
+
 module.exports = {
     controllerAgendaMedica,
     controllerPacientesAgendadosMedico,
     controllerDetalheConsultaMedico,
     controllerConcluirConsulta,
-    controllerConfirmarConsulta
+    controllerConfirmarConsulta,
+    controllerDefinirHorario
 }
