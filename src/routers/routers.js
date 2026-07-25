@@ -1,7 +1,7 @@
 const express = require('express')
 const { controllerLoginUsuario } = require('../controllers/controllerLogin')
 const { controllerCriarPaciente, controllerPerfilPaciente, controllerAtualizarPaciente, controllerAlterarSenhaPaciente, controllerHorariosDisponiveis, controllerAgendarConsulta, controllerCancelarConsultaPaciente, controllerHistoricoConsultasPaciente, controllerDetalheConsultaPaciente } = require('../controllers/controllerPaciente')
-const { controllerAgendaMedica, controllerPacientesAgendadosMedico, controllerDetalheConsultaMedico, controllerConcluirConsulta, controllerConfirmarConsulta, controllerDefinirHorario } = require('../controllers/controllerMedico')
+const { controllerAgendaMedica, controllerPacientesAgendadosMedico, controllerDetalheConsultaMedico, controllerConcluirConsulta, controllerConfirmarConsulta, controllerDefinirHorario, controllerListarHorariosMedico } = require('../controllers/controllerMedico')
 
 const authPaciente = require('../middlewares/authPaciente')
 const authMedico = require('../middlewares/authMedico')
@@ -29,6 +29,6 @@ routers.get('/medicos/consultas/:consulta_id', auth, authMedico, controllerDetal
 routers.put('/medicos/consultas/:consulta_id/concluir', auth, authMedico, controllerConcluirConsulta )
 routers.put('/medicos/consultas/:consulta_id/confirmar', auth, authMedico, controllerConfirmarConsulta) // enviar email de confirmação ao paciente
 routers.post('/medicos/horarios', auth, authMedico, controllerDefinirHorario)
-
+routers.get('/medicos/horarios', auth, authMedico, controllerListarHorariosMedico)
 
 module.exports = routers

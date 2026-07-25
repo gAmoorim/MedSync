@@ -1,4 +1,4 @@
-const { queryAgendaMedico, queryBuscarMedicoPorUsuarioId, queryPacientesAgendadosMedico, queryDetalheConsultaMedico, queryConcluirConsulta, queryConfirmarConsulta, queryVerificarConflitoHorario, queryDefinirHorarios } = require("../database/querys/queryMedico")
+const { queryAgendaMedico, queryBuscarMedicoPorUsuarioId, queryPacientesAgendadosMedico, queryDetalheConsultaMedico, queryConcluirConsulta, queryConfirmarConsulta, queryVerificarConflitoHorario, queryDefinirHorarios, queryListarHorariosMedico } = require("../database/querys/queryMedico")
 
 
 const controllerAgendaMedica = async (req, res) => {
@@ -216,11 +216,34 @@ const controllerDefinirHorario = async (req, res) => {
     }
 }
 
+const controllerListarHorariosMedico = async (req, res) => {
+    try {
+        const usuarioId = req.usuario.id
+        
+        if (!usuarioId) {
+            return res.status(400).json({ error: 'Erro ao obter o id do médico logado'})
+        }
+        
+        const medico = await queryBuscarMedicoPorUsuarioId(usuarioId)
+        const horarios = await queryListarHorariosMedico(medico.id)
+
+        if (!horarios) {
+            return res.status(404).json({ error: 'Nenhum horário encontrado'})
+        }
+
+        return res.status(200).json({ mensagem: 'Lista de horários', horarios})
+    } catch (error) {
+        console.error('Ocorreu um erro ao listar horários:', error)
+        return res.status(500).json({ error: `Erro ao listar horários: ${error.message}` })
+    }
+}
+
 module.exports = {
     controllerAgendaMedica,
     controllerPacientesAgendadosMedico,
     controllerDetalheConsultaMedico,
     controllerConcluirConsulta,
     controllerConfirmarConsulta,
-    controllerDefinirHorario
+    controllerDefinirHorario,
+    controllerListarHorariosMedico
 }
