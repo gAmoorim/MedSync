@@ -138,6 +138,27 @@ const queryListarHorariosMedico = async (medicoId) => {
         .orderBy('dia_semana', 'asc')
 }
 
+const queryBuscarHorarioMedico = async (horario_id) => {
+    return await knex('horarios_atendimento')
+    .where('id', horario_id)
+    .returning('*')
+    .first()
+}
+
+const queryVerificarConsultasNoHorario = async (horario_id) => {
+    return await knex('consultas')
+    .where('horario_atendimento_id', horario_id)
+    .whereIn('status', ['agendada', 'confirmada'])
+    .select('id', 'data', 'hora_inicio', 'status')
+}
+
+const queryAtualizarHorario = async (horario_id, hora_inicio, hora_fim, intervalo_minutos, ativo, data_fim_vigencia) => {
+    return await knex('horarios_atendimento')
+    .where({id: horario_id})
+    .update({hora_inicio, hora_fim, intervalo_minutos, ativo, data_fim_vigencia})
+    .returning('*')
+}
+
 module.exports = {
     queryAgendaMedico,
     queryBuscarMedicoPorUsuarioId,
@@ -147,5 +168,8 @@ module.exports = {
     queryConfirmarConsulta,
     queryVerificarConflitoHorario,
     queryDefinirHorarios,
-    queryListarHorariosMedico
+    queryListarHorariosMedico,
+    queryBuscarHorarioMedico,
+    queryVerificarConsultasNoHorario,
+    queryAtualizarHorario
 }

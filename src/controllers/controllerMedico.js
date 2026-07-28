@@ -1,4 +1,4 @@
-const { queryAgendaMedico, queryBuscarMedicoPorUsuarioId, queryPacientesAgendadosMedico, queryDetalheConsultaMedico, queryConcluirConsulta, queryConfirmarConsulta, queryVerificarConflitoHorario, queryDefinirHorarios, queryListarHorariosMedico } = require("../database/querys/queryMedico")
+const { queryAgendaMedico, queryBuscarMedicoPorUsuarioId, queryPacientesAgendadosMedico, queryDetalheConsultaMedico, queryConcluirConsulta, queryConfirmarConsulta, queryVerificarConflitoHorario, queryDefinirHorarios, queryListarHorariosMedico, queryBuscarHorarioMedico, queryVerificarConsultasNoHorario, queryAtualizarHorario } = require("../database/querys/queryMedico")
 
 
 const controllerAgendaMedica = async (req, res) => {
@@ -238,6 +238,48 @@ const controllerListarHorariosMedico = async (req, res) => {
     }
 }
 
+const controllerAtualizarHorario = async (req, res) => {
+    const { horario_id } = req.params
+    const { hora_inicio, hora_fim, intervalo_minutos, ativo, data_fim_vigencia } = req.body
+
+    try {
+        const usuarioId = req.usuario.id
+        
+        if (!usuarioId) {
+            return res.status(400).json({ error: 'erro ao obter o id do usuario logado.'})
+        }
+
+        const medico = await queryBuscarMedicoPorUsuarioId(usuarioId)
+        const horario = await queryBuscarHorarioMedico(horario_id)
+
+        if (!horario) {
+            return res.status(404).json({ error: 'Nenhum horario encontrado com esse id'})
+        }
+
+        if (horario.medico_id !== medico.id) {
+            return res.status(400).json({ error: 'A consulta informada não pertence ao médico logado'})
+        }
+
+        const consultasAfetadas = await queryVerificarConsultasNoHorario(horario_id)
+
+        if (consultasAfetadas.length > 0) {
+            return res.status(409).json({ error: 'Não é possível alterar o horário pois há consultas agendadas ou confirmadas vinculadas',
+                consultas: consultasAfetadas
+            })
+        }
+
+        const horarioAtualizado = await queryAtualizarHorario(horario_id, hora_inicio, hora_fim, intervalo_minutos, ativo, data_fim_vigencia)
+
+        return res.status(200).json({ mensagem: 'Horário atualizado', horario: horarioAtualizado})
+    } catch (error) {
+        console.error('Ocorreu um erro ao atualizar o horário:', error)
+        return res.status(500).json({ error: `Erro ao atualizar o horário: ${error.message}` })
+    }
+    
+}
+
+
+
 module.exports = {
     controllerAgendaMedica,
     controllerPacientesAgendadosMedico,
@@ -245,5 +287,6 @@ module.exports = {
     controllerConcluirConsulta,
     controllerConfirmarConsulta,
     controllerDefinirHorario,
-    controllerListarHorariosMedico
+    controllerListarHorariosMedico,
+    controllerAtualizarHorario
 }
