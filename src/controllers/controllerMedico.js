@@ -1,4 +1,4 @@
-const { queryAgendaMedico, queryBuscarMedicoPorUsuarioId, queryPacientesAgendadosMedico, queryDetalheConsultaMedico, queryConcluirConsulta, queryConfirmarConsulta, queryVerificarConflitoHorario, queryDefinirHorarios, queryListarHorariosMedico, queryBuscarHorarioMedico, queryVerificarConsultasNoHorario, queryAtualizarHorario, queryInativarHorario, queryPerfilMedico } = require("../database/querys/queryMedico")
+const { queryAgendaMedico, queryBuscarMedicoPorUsuarioId, queryPacientesAgendadosMedico, queryDetalheConsultaMedico, queryConcluirConsulta, queryConfirmarConsulta, queryVerificarConflitoHorario, queryDefinirHorarios, queryListarHorariosMedico, queryBuscarHorarioMedico, queryVerificarConsultasNoHorario, queryAtualizarHorario, queryInativarHorario, queryPerfilMedico, queryAtualizarPerfilMedico } = require("../database/querys/queryMedico")
 
 
 const controllerAgendaMedica = async (req, res) => {
@@ -338,6 +338,30 @@ const controllerPerfilMedico = async (req, res) => {
     }
 }
 
+const controllerAtualizarPerfilMedico = async (req, res) => {
+    const { nome, telefone } = req.body
+
+    if (!nome || !telefone) {
+        return res.status(400).json({ error: 'Preencha os campos obrigatórios'})
+    }
+
+    try {
+        const usuarioId = req.usuario.id
+        const medico = await queryBuscarMedicoPorUsuarioId(usuarioId)
+
+        if (!medico) {
+            return res.status(404).json({ error: 'Médico não encontrado'})
+        }
+
+        const camposAtualizados = await queryAtualizarPerfilMedico(medico.id, usuarioId, nome, telefone)
+
+        return res.status(200).json({ mensagem: 'Campos atualizados', camposAtualizados})
+    } catch (error) {
+        console.error('Ocorreu um erro ao atualizar perfil do medico:', error)
+        return res.status(500).json({ error: `Erro ao atualizar perfil do medico: ${error.message}`})
+    }
+}
+
 module.exports = {
     controllerAgendaMedica,
     controllerPacientesAgendadosMedico,
@@ -348,5 +372,6 @@ module.exports = {
     controllerListarHorariosMedico,
     controllerAtualizarHorario,
     controllerDeletarHorario,
-    controllerPerfilMedico
+    controllerPerfilMedico,
+    controllerAtualizarPerfilMedico
 }

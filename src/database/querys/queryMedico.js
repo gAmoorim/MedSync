@@ -180,6 +180,22 @@ const queryPerfilMedico = async (medicoId) => {
         .first()
 }
 
+const queryAtualizarPerfilMedico = async (medicoId, usuarioId, nome, telefone) => {
+    return await knex.transaction(async (trx) => {
+        const [usuario] = await trx('usuarios')
+            .where({ id: usuarioId })
+            .update({ nome })
+            .returning(['id', 'nome', 'email'])
+
+        const [medico] = await trx('medicos')
+            .where({ id: medicoId })
+            .update({ telefone })
+            .returning(['crm', 'telefone'])
+
+        return { ...usuario, ...medico }
+    })
+}
+
 module.exports = {
     queryAgendaMedico,
     queryBuscarMedicoPorUsuarioId,
@@ -194,5 +210,6 @@ module.exports = {
     queryVerificarConsultasNoHorario,
     queryAtualizarHorario,
     queryInativarHorario,
-    queryPerfilMedico
+    queryPerfilMedico,
+    queryAtualizarPerfilMedico
 }
