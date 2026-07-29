@@ -159,6 +159,12 @@ const queryAtualizarHorario = async (horario_id, hora_inicio, hora_fim, interval
     .returning('*')
 }
 
+const queryInativarHorario = async (horario_id) => {
+    await knex('horarios_atendimento')
+    .where({ id: horario_id })
+    .update({ ativo: false })
+}
+
 module.exports = {
     queryAgendaMedico,
     queryBuscarMedicoPorUsuarioId,
@@ -171,5 +177,6 @@ module.exports = {
     queryListarHorariosMedico,
     queryBuscarHorarioMedico,
     queryVerificarConsultasNoHorario,
-    queryAtualizarHorario
+    queryAtualizarHorario,
+    queryInativarHorario
 }

@@ -1,7 +1,7 @@
 const express = require('express')
 const { controllerLoginUsuario } = require('../controllers/controllerLogin')
 const { controllerCriarPaciente, controllerPerfilPaciente, controllerAtualizarPaciente, controllerAlterarSenhaPaciente, controllerHorariosDisponiveis, controllerAgendarConsulta, controllerCancelarConsultaPaciente, controllerHistoricoConsultasPaciente, controllerDetalheConsultaPaciente } = require('../controllers/controllerPaciente')
-const { controllerAgendaMedica, controllerPacientesAgendadosMedico, controllerDetalheConsultaMedico, controllerConcluirConsulta, controllerConfirmarConsulta, controllerDefinirHorario, controllerListarHorariosMedico, controllerAtualizarHorario } = require('../controllers/controllerMedico')
+const { controllerAgendaMedica, controllerPacientesAgendadosMedico, controllerDetalheConsultaMedico, controllerConcluirConsulta, controllerConfirmarConsulta, controllerDefinirHorario, controllerListarHorariosMedico, controllerAtualizarHorario, controllerDeletarHorario } = require('../controllers/controllerMedico')
 
 const authPaciente = require('../middlewares/authPaciente')
 const authMedico = require('../middlewares/authMedico')
@@ -31,5 +31,6 @@ routers.put('/medicos/consultas/:consulta_id/confirmar', auth, authMedico, contr
 routers.post('/medicos/horarios', auth, authMedico, controllerDefinirHorario)
 routers.get('/medicos/horarios', auth, authMedico, controllerListarHorariosMedico)
 routers.put('/medicos/horarios/:horario_id', auth, authMedico, controllerAtualizarHorario)
+routers.delete('/medicos/horarios/:horario_id', auth, authMedico, controllerDeletarHorario)
 
 module.exports = routers

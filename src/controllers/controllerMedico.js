@@ -1,4 +1,4 @@
-const { queryAgendaMedico, queryBuscarMedicoPorUsuarioId, queryPacientesAgendadosMedico, queryDetalheConsultaMedico, queryConcluirConsulta, queryConfirmarConsulta, queryVerificarConflitoHorario, queryDefinirHorarios, queryListarHorariosMedico, queryBuscarHorarioMedico, queryVerificarConsultasNoHorario, queryAtualizarHorario } = require("../database/querys/queryMedico")
+const { queryAgendaMedico, queryBuscarMedicoPorUsuarioId, queryPacientesAgendadosMedico, queryDetalheConsultaMedico, queryConcluirConsulta, queryConfirmarConsulta, queryVerificarConflitoHorario, queryDefinirHorarios, queryListarHorariosMedico, queryBuscarHorarioMedico, queryVerificarConsultasNoHorario, queryAtualizarHorario, queryInativarHorario } = require("../database/querys/queryMedico")
 
 
 const controllerAgendaMedica = async (req, res) => {
@@ -278,7 +278,47 @@ const controllerAtualizarHorario = async (req, res) => {
     
 }
 
+const controllerDeletarHorario = async (req, res) => {
+    const { horario_id } = req.params
 
+    if (!horario_id) {
+        return res.status(400).json({ error: 'é preciso informar o id do horario'})
+    }
+
+    try {
+        const usuarioId = req.usuario.id
+
+        if (!usuarioId) {
+            return res.status(400).json({ error: 'erro ao obter o id do usuario logado.'})
+        }
+
+        const medico = await queryBuscarMedicoPorUsuarioId(usuarioId)
+        const horario = await queryBuscarHorarioMedico(horario_id)
+
+        if (!horario) {
+            return res.status(404).json({ error: 'Nenhum horário encontrado'})
+        }
+
+        if (horario.medico_id !== medico.id) {
+            return res.status(400).json({ error: 'A consulta informada não pertence ao médico logado'})
+        }
+
+        const consultasAfetadas = await queryVerificarConsultasNoHorario(horario_id)
+
+        if (consultasAfetadas.length > 0) {
+            return res.status(409).json({ error: 'Não é possível deletar o horário pois há consultas agendadas ou confirmadas vinculadas',
+                consultas: consultasAfetadas
+            })
+        }
+
+        await queryInativarHorario(horario_id)
+
+        return res.status(200).json({ mensagem: 'Horário inativado'})
+    } catch (error) {
+        console.error('Ocorreu um erro ao deletar o horário:', error)
+        return res.status(500).json({ error: `Erro ao deletar o horário: ${error.message}`})
+    }
+}
 
 module.exports = {
     controllerAgendaMedica,
@@ -288,5 +328,6 @@ module.exports = {
     controllerConfirmarConsulta,
     controllerDefinirHorario,
     controllerListarHorariosMedico,
-    controllerAtualizarHorario
+    controllerAtualizarHorario,
+    controllerDeletarHorario
 }
