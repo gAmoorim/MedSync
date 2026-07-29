@@ -165,6 +165,21 @@ const queryInativarHorario = async (horario_id) => {
     .update({ ativo: false })
 }
 
+const queryPerfilMedico = async (medicoId) => {
+    return await knex('medicos as m')
+        .join('usuarios as u', 'm.usuario_id', 'u.id')
+        .join('especialidades as e', 'm.especialidade_id', 'e.id')
+        .where('m.id', medicoId)
+        .select(
+            'u.nome',
+            'u.email',
+            'm.crm',
+            'e.nome as especialidade',
+            'm.telefone'
+        )
+        .first()
+}
+
 module.exports = {
     queryAgendaMedico,
     queryBuscarMedicoPorUsuarioId,
@@ -178,5 +193,6 @@ module.exports = {
     queryBuscarHorarioMedico,
     queryVerificarConsultasNoHorario,
     queryAtualizarHorario,
-    queryInativarHorario
+    queryInativarHorario,
+    queryPerfilMedico
 }

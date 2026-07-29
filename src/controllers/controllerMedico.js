@@ -1,4 +1,4 @@
-const { queryAgendaMedico, queryBuscarMedicoPorUsuarioId, queryPacientesAgendadosMedico, queryDetalheConsultaMedico, queryConcluirConsulta, queryConfirmarConsulta, queryVerificarConflitoHorario, queryDefinirHorarios, queryListarHorariosMedico, queryBuscarHorarioMedico, queryVerificarConsultasNoHorario, queryAtualizarHorario, queryInativarHorario } = require("../database/querys/queryMedico")
+const { queryAgendaMedico, queryBuscarMedicoPorUsuarioId, queryPacientesAgendadosMedico, queryDetalheConsultaMedico, queryConcluirConsulta, queryConfirmarConsulta, queryVerificarConflitoHorario, queryDefinirHorarios, queryListarHorariosMedico, queryBuscarHorarioMedico, queryVerificarConsultasNoHorario, queryAtualizarHorario, queryInativarHorario, queryPerfilMedico } = require("../database/querys/queryMedico")
 
 
 const controllerAgendaMedica = async (req, res) => {
@@ -244,12 +244,12 @@ const controllerAtualizarHorario = async (req, res) => {
 
     try {
         const usuarioId = req.usuario.id
-        
-        if (!usuarioId) {
-            return res.status(400).json({ error: 'erro ao obter o id do usuario logado.'})
+        const medico = await queryBuscarMedicoPorUsuarioId(usuarioId)
+
+        if (!medico) {
+            return res.status(404).json({ error: 'Médico não encontrado' })
         }
 
-        const medico = await queryBuscarMedicoPorUsuarioId(usuarioId)
         const horario = await queryBuscarHorarioMedico(horario_id)
 
         if (!horario) {
@@ -287,12 +287,12 @@ const controllerDeletarHorario = async (req, res) => {
 
     try {
         const usuarioId = req.usuario.id
+        const medico = await queryBuscarMedicoPorUsuarioId(usuarioId)
 
-        if (!usuarioId) {
-            return res.status(400).json({ error: 'erro ao obter o id do usuario logado.'})
+        if (!medico) {
+            return res.status(404).json({ error: 'Médico não encontrado' })
         }
 
-        const medico = await queryBuscarMedicoPorUsuarioId(usuarioId)
         const horario = await queryBuscarHorarioMedico(horario_id)
 
         if (!horario) {
@@ -320,6 +320,24 @@ const controllerDeletarHorario = async (req, res) => {
     }
 }
 
+const controllerPerfilMedico = async (req, res) => {
+    try {
+        const usuarioId = req.usuario.id
+        const medico = await queryBuscarMedicoPorUsuarioId(usuarioId)
+
+        if (!medico) {
+            return res.status(404).json({ error: 'Médico não encontrado' })
+        }
+
+        const perfilMedico = await queryPerfilMedico(medico.id)
+
+        return res.status(200).json({ mensagem: 'Dados do médico', medico: perfilMedico})
+    } catch (error) {
+        console.error('Ocorreu um erro ao obter perfil do medico:', error)
+        return res.status(500).json({ error: `Erro ao obter perfil do medico: ${error.message}`})
+    }
+}
+
 module.exports = {
     controllerAgendaMedica,
     controllerPacientesAgendadosMedico,
@@ -329,5 +347,6 @@ module.exports = {
     controllerDefinirHorario,
     controllerListarHorariosMedico,
     controllerAtualizarHorario,
-    controllerDeletarHorario
+    controllerDeletarHorario,
+    controllerPerfilMedico
 }
