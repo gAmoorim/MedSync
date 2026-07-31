@@ -2,7 +2,7 @@ const express = require('express')
 const { controllerLoginUsuario } = require('../controllers/controllerLogin')
 const { controllerCriarPaciente, controllerPerfilPaciente, controllerAtualizarPaciente, controllerAlterarSenhaPaciente, controllerHorariosDisponiveis, controllerAgendarConsulta, controllerCancelarConsultaPaciente, controllerHistoricoConsultasPaciente, controllerDetalheConsultaPaciente } = require('../controllers/controllerPaciente')
 const { controllerAgendaMedica, controllerPacientesAgendadosMedico, controllerDetalheConsultaMedico, controllerConcluirConsulta, controllerConfirmarConsulta, controllerDefinirHorario, controllerListarHorariosMedico, controllerAtualizarHorario, controllerDeletarHorario, controllerPerfilMedico, controllerAtualizarPerfilMedico } = require('../controllers/controllerMedico')
-const { controllerCadastrarMedico } = require('../controllers/controllerAdministrador')
+const { controllerCadastrarMedico, controllerListarMedicos } = require('../controllers/controllerAdministrador')
 
 const auth = require('../middlewares/auth')
 const authAdm = require('../middlewares/authAdm')
@@ -37,9 +37,8 @@ routers.delete('/medicos/horarios/:horario_id', auth, authMedico, controllerDele
 routers.get('/medicos/perfil',auth, authMedico, controllerPerfilMedico)
 routers.put('/medicos/perfil', auth, authMedico, controllerAtualizarPerfilMedico)
 
-
 //rotas direcionadas a adm
 routers.post('/admin/medicos', auth, authAdm, controllerCadastrarMedico)
-
+routers.get('/admin/medicos', auth, authAdm, controllerListarMedicos)
 
 module.exports = routers
