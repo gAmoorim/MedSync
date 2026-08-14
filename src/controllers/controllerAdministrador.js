@@ -1,5 +1,5 @@
 const { queryBuscarUsuarioPeloEmail } = require("../database/querys/queryUsuarios")
-const { queryBuscarMedicoPorCRM, queryCadastrarMedico, queryListarMedicos } = require("../database/querys/queryAdministrador")
+const { queryBuscarMedicoPorCRM, queryCadastrarMedico, queryListarMedicos, queryDetalheMedico } = require("../database/querys/queryAdministrador")
 const { validarEmail, validarCRM, validarTelefone } = require("../utils/validations")
 const bcrypt = require('bcrypt')
 
@@ -69,7 +69,29 @@ const controllerListarMedicos = async (req, res) => {
     }
 }
 
+const controllerDetalheMedico = async (req,res) => {
+    const {medico_id} = req.params
+
+    if (!medico_id) {
+        return res.status(400).json({ error: 'Informe o id do médico'})
+    }
+
+    try {
+        const medico = await queryDetalheMedico(medico_id)
+
+        if (!medico) {
+            return res.status(404).json({ error: 'Nenhum resultado obtido com o id informado'})
+        }
+
+        return res.status(200).json({ mensagem: 'Detalhes do médico encontrado', medico})
+    } catch (error) {
+        console.error('Ocorreu um erro ao detalhar o médico', error)
+        return res.status(500).json({ error: `Erro ao detalhar o médico: ${error.message}`})
+    }
+}
+
 module.exports = {
     controllerCadastrarMedico,
-    controllerListarMedicos
+    controllerListarMedicos,
+    controllerDetalheMedico
 }
