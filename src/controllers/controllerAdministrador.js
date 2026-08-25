@@ -1,5 +1,5 @@
 const { queryBuscarUsuarioPeloEmail } = require("../database/querys/queryUsuarios")
-const { queryBuscarMedicoPorCRM, queryCadastrarMedico, queryListarMedicos, queryDetalheMedico } = require("../database/querys/queryAdministrador")
+const { queryBuscarMedicoPorCRM, queryCadastrarMedico, queryListarMedicos, queryDetalheMedico, queryBuscarMedicoPorId, queryAtualizarMedico } = require("../database/querys/queryAdministrador")
 const { validarEmail, validarCRM, validarTelefone } = require("../utils/validations")
 const bcrypt = require('bcrypt')
 
@@ -90,8 +90,50 @@ const controllerDetalheMedico = async (req,res) => {
     }
 }
 
+const controllerAtualizarMedico = async (req, res) => {
+    const { medico_id } = req.params
+    const {nome, email, crm, especialidade_id, telefone, ativo} = req.body
+
+    if (!medico_id) {
+        return res.status(400).json({ error: 'Informe o id do médico'})
+    }
+
+    try {
+        const medico = await queryBuscarMedicoPorId(medico_id)
+
+        if (!medico) {
+            return res.status(404).json({ error: 'Nenhum médico encontrado com o id informado.'})
+        }
+
+        if (email) {
+            const emailExistente = await queryBuscarUsuarioPeloEmail(email)
+
+            if (emailExistente && emailExistente.id !== medico.usuario_id) {
+                return res.status(409).json({ error: 'Este email já está cadastrado'})
+            }
+        }
+
+        if (crm) {
+            const crmExistente = await queryBuscarMedicoPorCRM(crm)
+
+            if (crmExistente && crmExistente.id !== Number(medico_id)) {
+                return res.status(409).json({ error: 'Este CRM já está cadastrado' })
+            }
+        }
+
+        const dadosAtualizados = await queryAtualizarMedico(medico_id, medico.usuario_id, nome, email, crm, especialidade_id, telefone, ativo)
+
+        return res.status(200).json({ mensagem: 'Médico atualizado com sucesso', medico: dadosAtualizados})
+    } catch (error) {
+        console.error('Ocorreu um erro ao atualizar o médico', error)
+        return res.status(500).json({ error: `Erro ao atualizar o médico: ${error.message}` })
+    }
+
+}
+
 module.exports = {
     controllerCadastrarMedico,
     controllerListarMedicos,
-    controllerDetalheMedico
+    controllerDetalheMedico,
+    controllerAtualizarMedico
 }

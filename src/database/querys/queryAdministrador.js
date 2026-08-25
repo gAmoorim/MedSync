@@ -74,9 +74,51 @@ const queryDetalheMedico = async (medico_id) => {
     return { ...medico, total_consultas: total }
 }
 
+const queryBuscarMedicoPorId = async (medico_id) => {
+    return await knex('medicos')
+    .where({ id: medico_id})
+    .first()
+}
+
+const queryBuscarUsuarioPeloEmail = async (emailExistente) => {
+    return await knex('usuarios')
+    .where({email: emailExistente})
+    .first()
+}
+                                    
+const queryAtualizarMedico = async (medico_id, usuario_id, nome, email, crm, especialidade_id, telefone, ativo) => {
+    return await knex.transaction(async (trx) => {
+        const dadosUsuario = {}
+        const dadosMedico = {}
+
+        if (nome) dadosUsuario.nome = nome
+        if (email) dadosUsuario.email = email
+        if (ativo !== undefined) dadosUsuario.ativo = ativo
+
+        if (crm) dadosMedico.crm = crm
+        if (especialidade_id) dadosMedico.especialidade_id = especialidade_id
+        if (telefone) dadosMedico.telefone = telefone
+
+        const [usuario] = await trx('usuarios')
+        .where({ id: usuario_id })
+        .update(dadosUsuario)
+        .returning(['id', 'nome', 'email', 'ativo'])
+
+        const [medico] = await trx('medicos')
+        .where({ id: medico_id })
+        .update(dadosMedico)
+        .returning(['id', 'crm', 'especialidade_id', 'telefone'])
+
+        return { ...usuario, ...medico }
+    })
+}
+
 module.exports = {
     queryBuscarMedicoPorCRM,
     queryCadastrarMedico,
     queryListarMedicos,
-    queryDetalheMedico
+    queryDetalheMedico,
+    queryBuscarMedicoPorId,
+    queryBuscarUsuarioPeloEmail,
+    queryAtualizarMedico
 }
