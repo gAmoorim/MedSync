@@ -59,7 +59,7 @@ const controllerListarMedicos = async (req, res) => {
     try {
         const medicos = await queryListarMedicos(especialidade, ativo, pagina, limite)
 
-        if (!medicos) {
+        if (medicos.length === 0) {
             return res.status(404).json({ error: 'Nenhum médico encontrado'})
         }
 
