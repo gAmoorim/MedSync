@@ -1,6 +1,7 @@
 const { queryBuscarUsuarioPeloEmail } = require("../database/querys/queryUsuarios")
-const { queryBuscarMedicoPorCRM, queryCadastrarMedico, queryListarMedicos, queryDetalheMedico, queryBuscarMedicoPorId, queryAtualizarMedico } = require("../database/querys/queryAdministrador")
+const { queryBuscarMedicoPorCRM, queryCadastrarMedico, queryListarMedicos, queryDetalheMedico, queryBuscarMedicoPorId, queryAtualizarMedico, queryInativarMedico } = require("../database/querys/queryAdministrador")
 const { validarEmail, validarCRM, validarTelefone } = require("../utils/validations")
+const { queryVerificarConsultasFuturasMedico } = require("../database/querys/queryConsultas")
 const bcrypt = require('bcrypt')
 
 const controllerCadastrarMedico = async (req, res) => {
@@ -131,9 +132,45 @@ const controllerAtualizarMedico = async (req, res) => {
 
 }
 
+const controllerInativarMedico = async (req,res) => {
+    const { medico_id } = req.params
+
+    if (!medico_id) {
+        return res.status(400).json({ error: 'Informe o Id do médico'})
+    }
+
+    try {
+        const medico = await queryBuscarMedicoPorId(medico_id)
+
+        if (!medico) {
+            return res.status(404).json({ error: 'Nenhum médico encontrado com o id informado.'})
+        }
+
+        if (!medico.ativo) {
+            return res.status(400).json({ error: 'Este médico já está inativo' })
+        }
+
+        const consultasFuturas  = await queryVerificarConsultasFuturasMedico(medico_id)
+
+        if (consultasFuturas .length > 0) {
+            return res.status(409).json({ error: 'Não é possível inativar o médico pois há consultas futuras pendentes',
+                consultas: consultasFuturas
+            })
+        }
+
+        await queryInativarMedico(medico.usuario_id)
+
+        return res.status(200).json({ mensagem: 'Médico inativado'})
+    } catch (error) {
+        console.error('Ocorreu um erro ao inativar o médico', error)
+        return res.status(500).json({ error: `Erro ao inativar o médico: ${error.message}`})
+    }
+}
+
 module.exports = {
     controllerCadastrarMedico,
     controllerListarMedicos,
     controllerDetalheMedico,
-    controllerAtualizarMedico
+    controllerAtualizarMedico,
+    controllerInativarMedico
 }

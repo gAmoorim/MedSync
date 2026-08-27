@@ -75,9 +75,11 @@ const queryDetalheMedico = async (medico_id) => {
 }
 
 const queryBuscarMedicoPorId = async (medico_id) => {
-    return await knex('medicos')
-    .where({ id: medico_id})
-    .first()
+    return await knex('medicos as m')
+        .join('usuarios as u', 'm.usuario_id', 'u.id')
+        .where('m.id', medico_id)
+        .select('m.*', 'u.ativo', 'u.email', 'u.nome')
+        .first()
 }
 
 const queryBuscarUsuarioPeloEmail = async (emailExistente) => {
@@ -113,6 +115,12 @@ const queryAtualizarMedico = async (medico_id, usuario_id, nome, email, crm, esp
     })
 }
 
+const queryInativarMedico = async (usuario_id) => {
+    await knex('usuarios')
+        .where({ id: usuario_id })
+        .update({ ativo: false })
+}
+
 module.exports = {
     queryBuscarMedicoPorCRM,
     queryCadastrarMedico,
@@ -120,5 +128,6 @@ module.exports = {
     queryDetalheMedico,
     queryBuscarMedicoPorId,
     queryBuscarUsuarioPeloEmail,
-    queryAtualizarMedico
+    queryAtualizarMedico,
+    queryInativarMedico
 }

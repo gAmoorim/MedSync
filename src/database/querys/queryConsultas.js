@@ -97,6 +97,16 @@ const queryDetalheConsultaPaciente = async (consulta_id) => {
         .first()
 }
 
+const queryVerificarConsultasFuturasMedico = async (medico_id) => {
+    const hoje = new Date().toISOString().split('T')[0]
+
+    return await knex('consultas')
+    .where('medico_id', medico_id)
+    .where('data', '>=', hoje)
+    .whereIn('status', ['agendada', 'confirmada'])
+    .select('id', 'data', 'hora_inicio', 'status')
+}
+
 module.exports = {
     queryVerificarSlotDisponivel,
     queryVerificarConsultaPaciente,
@@ -104,5 +114,6 @@ module.exports = {
     queryBuscarConsultaPeloId,
     queryCancelarConsulta,
     queryHistoricoConsultas,
-    queryDetalheConsultaPaciente
+    queryDetalheConsultaPaciente,
+    queryVerificarConsultasFuturasMedico
 }
