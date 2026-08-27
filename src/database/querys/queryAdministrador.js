@@ -121,6 +121,35 @@ const queryInativarMedico = async (usuario_id) => {
         .update({ ativo: false })
 }
 
+const queryListarPacientes = async (nome, cpf, pagina, limite) => {
+    const offset = (pagina - 1) * limite
+
+    const query = knex('pacientes as p')
+        .join('usuarios as u', 'p.usuario_id', 'u.id')
+        .select(
+            'p.id as paciente_id',
+            'u.nome',
+            'u.email',
+            'p.cpf',
+            'p.telefone',
+            'p.data_nascimento',
+            knex('consultas').count('id').where('paciente_id', knex.ref('p.id')).as('total_consultas')
+        )
+        .orderBy('u.nome', 'asc')
+        .limit(limite)
+        .offset(offset)
+
+    if (nome) {
+        query.where('u.nome', 'ilike', `%${nome}%`)
+    }
+
+    if (cpf) {
+        query.where('p.cpf', cpf)
+    }
+
+    return await query
+}
+
 module.exports = {
     queryBuscarMedicoPorCRM,
     queryCadastrarMedico,
@@ -129,5 +158,6 @@ module.exports = {
     queryBuscarMedicoPorId,
     queryBuscarUsuarioPeloEmail,
     queryAtualizarMedico,
-    queryInativarMedico
+    queryInativarMedico,
+    queryListarPacientes
 }

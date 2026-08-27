@@ -1,5 +1,5 @@
 const { queryBuscarUsuarioPeloEmail } = require("../database/querys/queryUsuarios")
-const { queryBuscarMedicoPorCRM, queryCadastrarMedico, queryListarMedicos, queryDetalheMedico, queryBuscarMedicoPorId, queryAtualizarMedico, queryInativarMedico } = require("../database/querys/queryAdministrador")
+const { queryBuscarMedicoPorCRM, queryCadastrarMedico, queryListarMedicos, queryDetalheMedico, queryBuscarMedicoPorId, queryAtualizarMedico, queryInativarMedico, queryListarPacientes } = require("../database/querys/queryAdministrador")
 const { validarEmail, validarCRM, validarTelefone } = require("../utils/validations")
 const { queryVerificarConsultasFuturasMedico } = require("../database/querys/queryConsultas")
 const bcrypt = require('bcrypt')
@@ -167,10 +167,28 @@ const controllerInativarMedico = async (req,res) => {
     }
 }
 
+const controllerListarPacientes = async (req, res) => {
+    const {nome, cpf, pagina = 1, limite = 10} = req.query
+
+    try {
+        const pacientes = await queryListarPacientes(nome, cpf, pagina, limite)
+
+        if (pacientes.length === 0) {
+            return res.status(404).json({ error: 'Nenhum paciente encontrado'})
+        }
+
+        return res.status(200).json({ mensagem: 'pacientes encontrados', pacientes})
+    } catch (error) {
+        console.error('Ocorreu um erro ao listar pacientes', error)
+        return res.status(500).json({ error: `Erro ao listar pacientes: ${error.message}`})
+    }
+}
+
 module.exports = {
     controllerCadastrarMedico,
     controllerListarMedicos,
     controllerDetalheMedico,
     controllerAtualizarMedico,
-    controllerInativarMedico
+    controllerInativarMedico,
+    controllerListarPacientes
 }

@@ -2,7 +2,7 @@ const express = require('express')
 const { controllerLoginUsuario } = require('../controllers/controllerLogin')
 const { controllerCriarPaciente, controllerPerfilPaciente, controllerAtualizarPaciente, controllerAlterarSenhaPaciente, controllerHorariosDisponiveis, controllerAgendarConsulta, controllerCancelarConsultaPaciente, controllerHistoricoConsultasPaciente, controllerDetalheConsultaPaciente } = require('../controllers/controllerPaciente')
 const { controllerAgendaMedica, controllerPacientesAgendadosMedico, controllerDetalheConsultaMedico, controllerConcluirConsulta, controllerConfirmarConsulta, controllerDefinirHorario, controllerListarHorariosMedico, controllerAtualizarHorario, controllerDeletarHorario, controllerPerfilMedico, controllerAtualizarPerfilMedico } = require('../controllers/controllerMedico')
-const { controllerCadastrarMedico, controllerListarMedicos, controllerDetalheMedico, controllerAtualizarMedico, controllerInativarMedico } = require('../controllers/controllerAdministrador')
+const { controllerCadastrarMedico, controllerListarMedicos, controllerDetalheMedico, controllerAtualizarMedico, controllerInativarMedico, controllerListarPacientes } = require('../controllers/controllerAdministrador')
 
 const auth = require('../middlewares/auth')
 const authAdm = require('../middlewares/authAdm')
@@ -43,5 +43,6 @@ routers.get('/admin/medicos', auth, authAdm, controllerListarMedicos)
 routers.get('/admin/medicos/:medico_id', auth, authAdm, controllerDetalheMedico)
 routers.put('/admin/medicos/:medico_id', auth, authAdm, controllerAtualizarMedico)
 routers.put('/admin/medicos/:medico_id/inativar', auth, authAdm, controllerInativarMedico)
+routers.get('/admin/pacientes', auth, authAdm, controllerListarPacientes)
 
 module.exports = routers
