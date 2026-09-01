@@ -65,6 +65,7 @@ const queryDetalheMedico = async (medico_id) => {
             'u.ativo'
         )
         .first()
+        if (!medico) return null
 
     const { total } = await knex ('consultas')
     .where('medico_id', medico_id)
@@ -150,6 +151,42 @@ const queryListarPacientes = async (nome, cpf, pagina, limite) => {
     return await query
 }
 
+const queryDetalhePaciente = async (paciente_id) => {
+    const paciente = await knex('pacientes as p')
+        .join('usuarios as u', 'p.usuario_id', 'u.id')
+        .where('p.id', paciente_id)
+        .select(
+            'p.id as paciente_id',
+            'u.nome',
+            'u.email',
+            'p.cpf',
+            'p.telefone',
+            'p.data_nascimento',
+            'u.ativo'
+        )
+        .first()
+
+    if (!paciente) return null
+
+    const consultas = await knex('consultas as c')
+        .join('medicos as m', 'c.medico_id', 'm.id')
+        .join('usuarios as u', 'm.usuario_id', 'u.id')
+        .join('especialidades as e', 'm.especialidade_id', 'e.id')
+        .where('c.paciente_id', paciente_id)
+        .select(
+            'c.id as consulta_id',
+            'u.nome as medico_nome',
+            'e.nome as especialidade',
+            'c.data',
+            'c.hora_inicio',
+            'c.status'
+        )
+        .orderBy('c.data', 'desc')
+        .limit(5)
+
+    return { ...paciente, ultimas_consultas: consultas }
+}
+
 module.exports = {
     queryBuscarMedicoPorCRM,
     queryCadastrarMedico,
@@ -159,5 +196,6 @@ module.exports = {
     queryBuscarUsuarioPeloEmail,
     queryAtualizarMedico,
     queryInativarMedico,
-    queryListarPacientes
+    queryListarPacientes,
+    queryDetalhePaciente
 }

@@ -1,5 +1,5 @@
 const { queryBuscarUsuarioPeloEmail } = require("../database/querys/queryUsuarios")
-const { queryBuscarMedicoPorCRM, queryCadastrarMedico, queryListarMedicos, queryDetalheMedico, queryBuscarMedicoPorId, queryAtualizarMedico, queryInativarMedico, queryListarPacientes } = require("../database/querys/queryAdministrador")
+const { queryBuscarMedicoPorCRM, queryCadastrarMedico, queryListarMedicos, queryDetalheMedico, queryBuscarMedicoPorId, queryAtualizarMedico, queryInativarMedico, queryListarPacientes, queryDetalhePaciente } = require("../database/querys/queryAdministrador")
 const { validarEmail, validarCRM, validarTelefone } = require("../utils/validations")
 const { queryVerificarConsultasFuturasMedico } = require("../database/querys/queryConsultas")
 const bcrypt = require('bcrypt')
@@ -81,7 +81,7 @@ const controllerDetalheMedico = async (req,res) => {
         const medico = await queryDetalheMedico(medico_id)
 
         if (!medico) {
-            return res.status(404).json({ error: 'Nenhum resultado obtido com o id informado'})
+            return res.status(404).json({ error: 'Nenhum médico encontrado com o id informado'})
         }
 
         return res.status(200).json({ mensagem: 'Detalhes do médico encontrado', medico})
@@ -184,11 +184,33 @@ const controllerListarPacientes = async (req, res) => {
     }
 }
 
+const controllerDetalhePaciente = async (req, res) => {
+    const {paciente_id} = req.params
+
+    if (!paciente_id) {
+        return res.status(400).json({ error: 'Informe o id do paciente'})
+    }
+
+    try {
+        const paciente = await queryDetalhePaciente(paciente_id)
+
+        if (!paciente) {
+            return res.status(404).json({ error: 'Nenhum paciente encontrado com o id informado.'})
+        }
+
+        return res.status(200).json({ mensagem: 'Dados e resumo de consultas do paciente', paciente})
+    } catch (error) {
+        console.error('Ocorreu um erro ao detalhar o paciente', error)
+        return res.status(500).json({error: `Erro ao detalhar o paciente: ${error.message}`})
+    }
+}
+
 module.exports = {
     controllerCadastrarMedico,
     controllerListarMedicos,
     controllerDetalheMedico,
     controllerAtualizarMedico,
     controllerInativarMedico,
-    controllerListarPacientes
+    controllerListarPacientes,
+    controllerDetalhePaciente
 }
