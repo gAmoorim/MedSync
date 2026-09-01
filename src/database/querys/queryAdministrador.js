@@ -6,6 +6,12 @@ const queryBuscarMedicoPorCRM = async (crm) => {
     .first()
 }
 
+const queryBuscarPacientePorId = async (paciente_id) => {
+    return await knex('pacientes')
+    .where({id: paciente_id})
+    .first()
+}
+
 const queryCadastrarMedico = async (nome, emailFormatado, senha_hash, crm, especialidade_id, telefone) => {
     return await knex.transaction(async (trx) => {
         const [usuario] = await trx('usuarios')
@@ -187,6 +193,32 @@ const queryDetalhePaciente = async (paciente_id) => {
     return { ...paciente, ultimas_consultas: consultas }
 }
 
+const queryAtualizarPacienteAdmin = async (paciente_id, usuario_id, nome, email, telefone, data_nascimento, ativo) => {
+    return await knex.transaction(async (trx) => {
+        const dadosUsuario = {}
+        const dadosPaciente = {}
+
+        if (nome) dadosUsuario.nome = nome
+        if (email) dadosUsuario.email = email
+        if (ativo !== undefined) dadosUsuario.ativo = ativo
+
+        if (telefone) dadosPaciente.telefone = telefone
+        if (data_nascimento) dadosPaciente.data_nascimento = data_nascimento
+
+        const [usuario] = await trx('usuarios')
+            .where({ id: usuario_id })
+            .update(dadosUsuario)
+            .returning(['id', 'nome', 'email', 'ativo'])
+
+        const [paciente] = await trx('pacientes')
+            .where({ id: paciente_id })
+            .update(dadosPaciente)
+            .returning(['id', 'telefone', 'data_nascimento', 'cpf'])
+
+        return { ...usuario, ...paciente }
+    })
+}
+
 module.exports = {
     queryBuscarMedicoPorCRM,
     queryCadastrarMedico,
@@ -197,5 +229,7 @@ module.exports = {
     queryAtualizarMedico,
     queryInativarMedico,
     queryListarPacientes,
-    queryDetalhePaciente
+    queryDetalhePaciente,
+    queryBuscarPacientePorId,
+    queryAtualizarPacienteAdmin
 }
