@@ -219,6 +219,37 @@ const queryAtualizarPacienteAdmin = async (paciente_id, usuario_id, nome, email,
     })
 }
 
+const queryListarConsultasAdmin = async (status, medico_id, paciente_id, data_inicio, data_fim, pagina, limite) => {
+    const offset = (pagina - 1) * limite
+
+    const query = knex('consultas as c')
+        .join('pacientes as p', 'c.paciente_id', 'p.id')
+        .join('usuarios as up', 'p.usuario_id', 'up.id')
+        .join('medicos as m', 'c.medico_id', 'm.id')
+        .join('usuarios as um', 'm.usuario_id', 'um.id')
+        .join('especialidades as e', 'm.especialidade_id', 'e.id')
+        .select(
+            'c.id as consulta_id',
+            'up.nome as paciente_nome',
+            'um.nome as medico_nome',
+            'e.nome as especialidade',
+            'c.data',
+            'c.hora_inicio as hora',
+            'c.status'
+        )
+        .orderBy('c.data', 'desc')
+        .limit(limite)
+        .offset(offset)
+
+    if (status) query.where('c.status', status)
+    if (medico_id) query.where('c.medico_id', medico_id)
+    if (paciente_id) query.where('c.paciente_id', paciente_id)
+    if (data_inicio) query.where('c.data', '>=', data_inicio)
+    if (data_fim) query.where('c.data', '<=', data_fim)
+
+    return await query
+}
+
 module.exports = {
     queryBuscarMedicoPorCRM,
     queryCadastrarMedico,
@@ -231,5 +262,6 @@ module.exports = {
     queryListarPacientes,
     queryDetalhePaciente,
     queryBuscarPacientePorId,
-    queryAtualizarPacienteAdmin
+    queryAtualizarPacienteAdmin,
+    queryListarConsultasAdmin
 }

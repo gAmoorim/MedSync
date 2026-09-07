@@ -1,5 +1,5 @@
 const { queryBuscarUsuarioPeloEmail } = require("../database/querys/queryUsuarios")
-const { queryBuscarMedicoPorCRM, queryCadastrarMedico, queryListarMedicos, queryDetalheMedico, queryBuscarMedicoPorId, queryAtualizarMedico, queryInativarMedico, queryListarPacientes, queryDetalhePaciente, queryBuscarPacientePorId, queryAtualizarPacienteAdmin } = require("../database/querys/queryAdministrador")
+const { queryBuscarMedicoPorCRM, queryCadastrarMedico, queryListarMedicos, queryDetalheMedico, queryBuscarMedicoPorId, queryAtualizarMedico, queryInativarMedico, queryListarPacientes, queryDetalhePaciente, queryBuscarPacientePorId, queryAtualizarPacienteAdmin, queryListarConsultasAdmin } = require("../database/querys/queryAdministrador")
 const { validarEmail, validarCRM, validarTelefone } = require("../utils/validations")
 const { queryVerificarConsultasFuturasMedico } = require("../database/querys/queryConsultas")
 const bcrypt = require('bcrypt')
@@ -238,6 +238,24 @@ const controllerAtualizarPacienteAdmin = async (req, res) => {
     }
 }
 
+const controllerListarConsultasAdmin = async (req, res) => {
+    const {status, medico_id, paciente_id, data_inicio, data_fim, pagina = 1, limite = 10} = req.query
+
+    try {
+        const consultas = await queryListarConsultasAdmin(status, medico_id, paciente_id, data_inicio, data_fim, pagina, limite)
+
+        if (!consultas) {
+            return res.status(404).json({ error: 'Nenhuma consulta encontrada'})
+        }
+
+        return res.status(200).json({ mensagem: 'Consultas', consultas})
+    } catch (error) {
+        console.error('Ocorreu um erro ao listar as consultas', error)
+        return res.status(500).json({error: `Erro ao listar as consultas: ${error.message}`})
+    }
+
+}
+
 module.exports = {
     controllerCadastrarMedico,
     controllerListarMedicos,
@@ -246,5 +264,6 @@ module.exports = {
     controllerInativarMedico,
     controllerListarPacientes,
     controllerDetalhePaciente,
-    controllerAtualizarPacienteAdmin
+    controllerAtualizarPacienteAdmin,
+    controllerListarConsultasAdmin
 }
