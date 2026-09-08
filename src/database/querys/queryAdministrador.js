@@ -250,6 +250,13 @@ const queryListarConsultasAdmin = async (status, medico_id, paciente_id, data_in
     return await query
 }
 
+const queryCacncelarConsultaAdmin = async (consulta_id, motivo_cancelamento) => {
+    return await knex('consultas')
+    .where({id: consulta_id})
+    .update({status: 'cancelada', motivo_cancelamento})
+    .returning(['id', 'status', 'motivo_cancelamento', 'data', 'hora_inicio', 'paciente_id', 'medico_id'])
+}
+
 module.exports = {
     queryBuscarMedicoPorCRM,
     queryCadastrarMedico,
@@ -263,5 +270,6 @@ module.exports = {
     queryDetalhePaciente,
     queryBuscarPacientePorId,
     queryAtualizarPacienteAdmin,
-    queryListarConsultasAdmin
+    queryListarConsultasAdmin,
+    queryCacncelarConsultaAdmin
 }

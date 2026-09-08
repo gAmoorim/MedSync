@@ -1,7 +1,7 @@
 const { queryBuscarUsuarioPeloEmail } = require("../database/querys/queryUsuarios")
-const { queryBuscarMedicoPorCRM, queryCadastrarMedico, queryListarMedicos, queryDetalheMedico, queryBuscarMedicoPorId, queryAtualizarMedico, queryInativarMedico, queryListarPacientes, queryDetalhePaciente, queryBuscarPacientePorId, queryAtualizarPacienteAdmin, queryListarConsultasAdmin } = require("../database/querys/queryAdministrador")
+const { queryBuscarMedicoPorCRM, queryCadastrarMedico, queryListarMedicos, queryDetalheMedico, queryBuscarMedicoPorId, queryAtualizarMedico, queryInativarMedico, queryListarPacientes, queryDetalhePaciente, queryBuscarPacientePorId, queryAtualizarPacienteAdmin, queryListarConsultasAdmin, queryCacncelarConsultaAdmin } = require("../database/querys/queryAdministrador")
 const { validarEmail, validarCRM, validarTelefone } = require("../utils/validations")
-const { queryVerificarConsultasFuturasMedico } = require("../database/querys/queryConsultas")
+const { queryVerificarConsultasFuturasMedico, queryBuscarConsultaPeloId } = require("../database/querys/queryConsultas")
 const bcrypt = require('bcrypt')
 
 const controllerCadastrarMedico = async (req, res) => {
@@ -256,6 +256,36 @@ const controllerListarConsultasAdmin = async (req, res) => {
 
 }
 
+const controllerCancelarConsultaAdmin = async (req, res) => {
+    const { consulta_id } = req.params
+    const { motivo_cancelamento } = req.body
+
+    if (!consulta_id) return res.status(400).json({ error: 'Informe o id da consulta' })
+    if (!motivo_cancelamento) return res.status(400).json({ error: 'Informe o motivo do cancelamento'})   
+        
+    try {
+        const consulta = await queryBuscarConsultaPeloId(consulta_id)
+
+        if (!consulta) {
+            return res.status(400).json({ error: 'Nenhuma consulta encontrada' })
+        }
+
+        if (consulta.status !== "agendada" && consulta.status !== "confirmada") {
+            return res.status(400).json({ error: "a consulta só pode ser cancelada se o status dela for confirmada ou agendada"})
+        }
+
+        const cancelarConsulta = await queryCacncelarConsultaAdmin(consulta_id, motivo_cancelamento)
+
+        //- Enviar e-mail ao paciente informando cancelamento e motivo
+        //- Enviar e-mail ao médico informando cancelamento
+
+        return res.status(200).json({ mensagem: 'Consulta cancelada', consulta: cancelarConsulta})
+    } catch (error) {
+        console.error('Ocorreu um erro ao cancelar a consulta', error)
+        return res.status(500).json({error: `Erro ao cancelar a consulta: ${error.message}`})
+    }    
+}
+
 module.exports = {
     controllerCadastrarMedico,
     controllerListarMedicos,
@@ -265,5 +295,6 @@ module.exports = {
     controllerListarPacientes,
     controllerDetalhePaciente,
     controllerAtualizarPacienteAdmin,
-    controllerListarConsultasAdmin
+    controllerListarConsultasAdmin,
+    controllerCancelarConsultaAdmin
 }
