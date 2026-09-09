@@ -2,6 +2,7 @@ const { queryBuscarUsuarioPeloEmail } = require("../database/querys/queryUsuario
 const { queryBuscarMedicoPorCRM, queryCadastrarMedico, queryListarMedicos, queryDetalheMedico, queryBuscarMedicoPorId, queryAtualizarMedico, queryInativarMedico, queryListarPacientes, queryDetalhePaciente, queryBuscarPacientePorId, queryAtualizarPacienteAdmin, queryListarConsultasAdmin, queryCacncelarConsultaAdmin } = require("../database/querys/queryAdministrador")
 const { validarEmail, validarCRM, validarTelefone } = require("../utils/validations")
 const { queryVerificarConsultasFuturasMedico, queryBuscarConsultaPeloId } = require("../database/querys/queryConsultas")
+const { queryRelatorioConsultas } = require("../database/querys/queryRelatorioConsultas")
 const bcrypt = require('bcrypt')
 
 const controllerCadastrarMedico = async (req, res) => {
@@ -286,6 +287,27 @@ const controllerCancelarConsultaAdmin = async (req, res) => {
     }    
 }
 
+const controllerRelatorioConsultas = async (req, res) => {
+    const {mes, medico_id} = req.query  //formato: YYYY-MM
+
+    if (!mes) {
+        return res.status(400).json({ error: 'É obrigatório informar o mes'})
+    }
+
+    try {
+        const relatorio = await queryRelatorioConsultas(mes, medico_id)
+
+        if (!relatorio) {
+            return res.status(400).json({ error: 'Erro ao obter o relatório'})
+        }
+
+        return res.status(200).json({ mensagem: 'Relatório de consultas', relatorio})
+    } catch (error) {
+        console.error('Ocorreu um erro ao obter o relatório de consultas', error)
+        return res.status(500).json({error: `Erro ao obter o relatório de consultas: ${error.message}`})
+    }
+}
+
 module.exports = {
     controllerCadastrarMedico,
     controllerListarMedicos,
@@ -296,5 +318,6 @@ module.exports = {
     controllerDetalhePaciente,
     controllerAtualizarPacienteAdmin,
     controllerListarConsultasAdmin,
-    controllerCancelarConsultaAdmin
+    controllerCancelarConsultaAdmin,
+    controllerRelatorioConsultas
 }
