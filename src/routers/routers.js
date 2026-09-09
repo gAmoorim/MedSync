@@ -2,7 +2,7 @@ const express = require('express')
 const { controllerLoginUsuario } = require('../controllers/controllerLogin')
 const { controllerCriarPaciente, controllerPerfilPaciente, controllerAtualizarPaciente, controllerAlterarSenhaPaciente, controllerHorariosDisponiveis, controllerAgendarConsulta, controllerCancelarConsultaPaciente, controllerHistoricoConsultasPaciente, controllerDetalheConsultaPaciente } = require('../controllers/controllerPaciente')
 const { controllerAgendaMedica, controllerPacientesAgendadosMedico, controllerDetalheConsultaMedico, controllerConcluirConsulta, controllerConfirmarConsulta, controllerDefinirHorario, controllerListarHorariosMedico, controllerAtualizarHorario, controllerDeletarHorario, controllerPerfilMedico, controllerAtualizarPerfilMedico } = require('../controllers/controllerMedico')
-const { controllerCadastrarMedico, controllerListarMedicos, controllerDetalheMedico, controllerAtualizarMedico, controllerInativarMedico, controllerListarPacientes, controllerDetalhePaciente, controllerAtualizarPacienteAdmin, controllerListarConsultasAdmin, controllerCancelarConsultaAdmin, controllerRelatorioConsultas } = require('../controllers/controllerAdministrador')
+const { controllerCadastrarMedico, controllerListarMedicos, controllerDetalheMedico, controllerAtualizarMedico, controllerInativarMedico, controllerListarPacientes, controllerDetalhePaciente, controllerAtualizarPacienteAdmin, controllerListarConsultasAdmin, controllerCancelarConsultaAdmin, controllerRelatorioConsultas, controllerRelatorioMedicos } = require('../controllers/controllerAdministrador')
 
 const auth = require('../middlewares/auth')
 const authAdm = require('../middlewares/authAdm')
@@ -49,5 +49,6 @@ routers.put('/admin/pacientes/:paciente_id', auth, authAdm, controllerAtualizarP
 routers.get('/admin/consultas', auth, authAdm, controllerListarConsultasAdmin)
 routers.put('/admin/consultas/:consulta_id/cancelar', auth, authAdm, controllerCancelarConsultaAdmin)
 routers.get('/admin/relatorios/consultas', auth, authAdm, controllerRelatorioConsultas)
+routers.get('/admin/relatorios/medicos', auth, authAdm, controllerRelatorioMedicos)
 
 module.exports = routers

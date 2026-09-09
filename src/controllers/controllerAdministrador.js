@@ -2,7 +2,7 @@ const { queryBuscarUsuarioPeloEmail } = require("../database/querys/queryUsuario
 const { queryBuscarMedicoPorCRM, queryCadastrarMedico, queryListarMedicos, queryDetalheMedico, queryBuscarMedicoPorId, queryAtualizarMedico, queryInativarMedico, queryListarPacientes, queryDetalhePaciente, queryBuscarPacientePorId, queryAtualizarPacienteAdmin, queryListarConsultasAdmin, queryCacncelarConsultaAdmin } = require("../database/querys/queryAdministrador")
 const { validarEmail, validarCRM, validarTelefone } = require("../utils/validations")
 const { queryVerificarConsultasFuturasMedico, queryBuscarConsultaPeloId } = require("../database/querys/queryConsultas")
-const { queryRelatorioConsultas } = require("../database/querys/queryRelatorioConsultas")
+const { queryRelatorioConsultas, queryRelatorioMedicos } = require("../database/querys/queryRelatorios")
 const bcrypt = require('bcrypt')
 
 const controllerCadastrarMedico = async (req, res) => {
@@ -291,7 +291,7 @@ const controllerRelatorioConsultas = async (req, res) => {
     const {mes, medico_id} = req.query  //formato: YYYY-MM
 
     if (!mes) {
-        return res.status(400).json({ error: 'É obrigatório informar o mes'})
+        return res.status(400).json({ error: 'O campo mês é obrigatório'})
     }
 
     try {
@@ -308,6 +308,27 @@ const controllerRelatorioConsultas = async (req, res) => {
     }
 }
 
+const controllerRelatorioMedicos = async (req, res) => {
+    const {mes} = req.query //formato: YYYY-MM
+
+    if (!mes) {
+        return res.status(400).json({ error: 'O campo mês é obrigatório'})
+    }
+
+    try {
+        const relatorio = await queryRelatorioMedicos(mes)
+
+        if (relatorio.length === 0) {
+            return res.status(404).json({ error: 'Nenhum médico ativo encontrado'})
+        }
+
+        return res.status(200).json({ mensagem: 'Relatório de médicos', relatorio})
+    } catch (error) {
+        console.error('Ocorreu um erro ao gerar o relatório:', error)
+        return res.status(500).json({error: `Erro ao gerar o relatório: ${error.message}`})
+    }
+}
+
 module.exports = {
     controllerCadastrarMedico,
     controllerListarMedicos,
@@ -319,5 +340,6 @@ module.exports = {
     controllerAtualizarPacienteAdmin,
     controllerListarConsultasAdmin,
     controllerCancelarConsultaAdmin,
-    controllerRelatorioConsultas
+    controllerRelatorioConsultas,
+    controllerRelatorioMedicos
 }
