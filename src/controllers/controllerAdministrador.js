@@ -3,6 +3,7 @@ const { queryBuscarMedicoPorCRM, queryCadastrarMedico, queryListarMedicos, query
 const { validarEmail, validarCRM, validarTelefone } = require("../utils/validations")
 const { queryVerificarConsultasFuturasMedico, queryBuscarConsultaPeloId } = require("../database/querys/queryConsultas")
 const { queryRelatorioConsultas, queryRelatorioMedicos } = require("../database/querys/queryRelatorios")
+const { emailCancelamento } = require("../services/emailService")
 const bcrypt = require('bcrypt')
 
 const controllerCadastrarMedico = async (req, res) => {
@@ -279,6 +280,17 @@ const controllerCancelarConsultaAdmin = async (req, res) => {
 
         //- Enviar e-mail ao paciente informando cancelamento e motivo
         //- Enviar e-mail ao médico informando cancelamento
+        const dados = {
+            paciente_nome: consulta.paciente_nome,
+            medico_nome: consulta.medico_nome,
+            data: consulta.data,
+            hora_inicio: consulta.hora_inicio,
+            motivo: motivo_cancelamento
+        }
+
+        await emailCancelamento(consulta.paciente_email, dados)
+        
+        //await emailCancelamento(consulta.medico_email, dados)
 
         return res.status(200).json({ mensagem: 'Consulta cancelada', consulta: cancelarConsulta})
     } catch (error) {

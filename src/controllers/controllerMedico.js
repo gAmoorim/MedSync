@@ -1,5 +1,5 @@
 const { queryAgendaMedico, queryBuscarMedicoPorUsuarioId, queryPacientesAgendadosMedico, queryDetalheConsultaMedico, queryConcluirConsulta, queryConfirmarConsulta, queryVerificarConflitoHorario, queryDefinirHorarios, queryListarHorariosMedico, queryBuscarHorarioMedico, queryVerificarConsultasNoHorario, queryAtualizarHorario, queryInativarHorario, queryPerfilMedico, queryAtualizarPerfilMedico } = require("../database/querys/queryMedico")
-
+const { emailConfirmacao } = require("../services/emailService")
 
 const controllerAgendaMedica = async (req, res) => {
     const { data_inicio, data_fim } = req.query
@@ -158,8 +158,17 @@ const controllerConfirmarConsulta = async (req, res) => {
         }
 
         const consulta_confirmada = await queryConfirmarConsulta(consulta_id)
-        // enviar email de confirmação ao paciente
 
+        // enviar email de confirmação ao paciente
+        const dados = {
+            paciente_nome: consulta.paciente_nome,
+            medico_nome: medico.nome,
+            data: consulta.data,
+            hora_inicio: consulta.hora
+        }
+
+        await emailConfirmacao(consulta.paciente_email, dados)
+  
         return res.status(200).json({ mensagem: 'Consulta confirmada', consulta_confirmada})
     } catch (error) {
         console.error('Ocorreu um erro ao concluir a consulta:', error)

@@ -19,8 +19,8 @@ routers.get('/pacientes/perfil', auth, authPaciente, controllerPerfilPaciente)
 routers.put('/pacientes/perfil', auth, authPaciente, controllerAtualizarPaciente)
 routers.put('/pacientes/senha', auth, authPaciente, controllerAlterarSenhaPaciente)
 routers.get('/pacientes/horarios-disponiveis', auth, authPaciente, controllerHorariosDisponiveis)
-routers.post('/pacientes/consultas', auth, authPaciente, controllerAgendarConsulta) //ENVIAR EMAIL CONFIRMANDO CONSULTA
-routers.put('/pacientes/consultas/:consulta_id/cancelar', auth, authPaciente, controllerCancelarConsultaPaciente) // Enviar e-mail de confirmação de cancelamento ao paciente
+routers.post('/pacientes/consultas', auth, authPaciente, controllerAgendarConsulta)
+routers.put('/pacientes/consultas/:consulta_id/cancelar', auth, authPaciente, controllerCancelarConsultaPaciente)
 routers.get('/pacientes/consultas', auth, authPaciente, controllerHistoricoConsultasPaciente)
 routers.get('/pacientes/consultas/:consulta_id', auth, authPaciente, controllerDetalheConsultaPaciente)
 
@@ -29,7 +29,7 @@ routers.get('/medicos/agenda', auth, authMedico, controllerAgendaMedica)
 routers.get('/medicos/consultas', auth, authMedico, controllerPacientesAgendadosMedico)
 routers.get('/medicos/consultas/:consulta_id', auth, authMedico, controllerDetalheConsultaMedico)
 routers.put('/medicos/consultas/:consulta_id/concluir', auth, authMedico, controllerConcluirConsulta )
-routers.put('/medicos/consultas/:consulta_id/confirmar', auth, authMedico, controllerConfirmarConsulta) // enviar email de confirmação ao paciente
+routers.put('/medicos/consultas/:consulta_id/confirmar', auth, authMedico, controllerConfirmarConsulta)
 routers.post('/medicos/horarios', auth, authMedico, controllerDefinirHorario)
 routers.get('/medicos/horarios', auth, authMedico, controllerListarHorariosMedico)
 routers.put('/medicos/horarios/:horario_id', auth, authMedico, controllerAtualizarHorario)

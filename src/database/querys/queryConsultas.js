@@ -38,9 +38,25 @@ const queryAgendarConsulta = async (pacienteId, medicoId, horarioId, data, hora_
 }
 
 const queryBuscarConsultaPeloId = async (consulta_id) => {
-    return await knex('consultas')
-    .where({id: consulta_id})
-    .first()
+    return await knex('consultas as c')
+        .join('medicos as m', 'c.medico_id', 'm.id')
+        .join('usuarios as um', 'm.usuario_id', 'um.id')
+        .join('pacientes as p', 'c.paciente_id', 'p.id')
+        .join('usuarios as up', 'p.usuario_id', 'up.id')
+        .where('c.id', consulta_id)
+        .select(
+            'c.id',
+            'c.paciente_id',
+            'c.medico_id',
+            'c.data',
+            'c.hora_inicio',
+            'c.status',
+            'um.nome as medico_nome',
+            'um.email as medico_email',
+            'up.nome as paciente_nome',
+            'up.email as paciente_email'
+        )
+        .first()
 }
 
 const queryCancelarConsulta = async (consulta_id) => {

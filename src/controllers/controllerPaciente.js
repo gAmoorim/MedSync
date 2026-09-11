@@ -3,6 +3,7 @@ const { queryHorariosDisponiveis } = require("../database/querys/queryHorarioDis
 const { queryBuscarPacientePeloCpf, queryPerfilPaciente, queryAtualizarPaciente, queryBuscarSenhaAtualPaciente, queryAtualizarSenhaPaciente, queryVerificarHorario, queryBuscarPacientePorUsuarioId } = require("../database/querys/queryPacientes")
 const { queryBuscarUsuarioPeloEmail, queryCriarPaciente } = require("../database/querys/queryUsuarios")
 const { validarEmail, validarTelefone, validarCPF } = require("../utils/validations")
+const { emailAgendamento, emailCancelamento  } = require('../services/emailService')
 const bcrypt = require('bcrypt')
 
 const controllerCriarPaciente = async (req, res) => {
@@ -221,7 +222,16 @@ const controllerAgendarConsulta = async (req, res) => {
             observacoes
         )
 
-        // ENVIAR EMAIL CONFIRMANDO CONSULTA
+        // EMAIL CONFIRMANDO CONSULTA
+        const dados = {
+            paciente_nome: paciente.nome,
+            medico_nome: horario.medico_nome,
+            especialidade: horario.especialidade,
+            data,
+            hora_inicio
+        }
+
+        await emailAgendamento(paciente.email, dados)
 
         return res.status(201).json({ mensagem: 'consulta agendada', consulta})
 
@@ -269,9 +279,19 @@ const controllerCancelarConsultaPaciente = async (req, res) => {
 
         await queryCancelarConsulta(consulta_id)
 
-        return res.status(200).json({ mensagem: 'Consulta cancelada com sucesso' })
-
         //Enviar e-mail de confirmação de cancelamento ao paciente
+        const dados = {
+            paciente_nome: paciente.nome,
+            medico_nome: consulta.medico_nome,
+            data: consulta.data,
+            hora_inicio: consulta.hora_inicio
+        }
+
+        console.log(dados)
+
+        await emailCancelamento(paciente.email, dados)
+
+        return res.status(200).json({ mensagem: 'Consulta cancelada com sucesso' })
     } catch (error) {
         console.error('Ocorreu um erro cancelar a consulta:', error)
         return res.status(500).json({ error: `Erro ao cancelar a consulta: ${error.message}`})

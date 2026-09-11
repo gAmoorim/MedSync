@@ -1,10 +1,11 @@
 const knex = require('../connection')
 
 const queryBuscarMedicoPorUsuarioId = async (usuarioId) => {
-    return await knex('medicos')
-    .where({usuario_id: usuarioId})
-    .select('id')
-    .first()
+    return await knex('medicos as m')
+        .join('usuarios as u', 'm.usuario_id', 'u.id')
+        .where('m.usuario_id', usuarioId)
+        .select('m.id', 'u.nome', 'u.email')
+        .first()
 }
 
 const queryAgendaMedico = async (medicoId, data_inicio, data_fim) => {
@@ -62,6 +63,7 @@ const queryDetalheConsultaMedico = async (consulta_id) => {
         .select(
             'c.id as consulta_id',
             'u.nome as paciente_nome',
+            'u.email as paciente_email',
             'p.cpf as paciente_cpf',
             'p.data_nascimento as paciente_data_nascimento',
             'p.telefone as paciente_telefone',

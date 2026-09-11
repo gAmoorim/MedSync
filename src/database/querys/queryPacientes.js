@@ -54,17 +54,19 @@ const queryVerificarHorario = async (horario_id) => {
     return await knex('horarios_atendimento as h')
         .join('medicos as m', 'h.medico_id', 'm.id')
         .join('usuarios as u', 'm.usuario_id', 'u.id')
+        .join('especialidades as e', 'm.especialidade_id', 'e.id')
         .where('h.id', horario_id)
         .where('h.ativo', true)
         .where('u.ativo', true)
-        .select('h.id', 'h.medico_id', 'h.hora_inicio', 'h.hora_fim', 'h.dia_semana', 'h.intervalo_minutos')
+        .select('h.id', 'h.medico_id', 'h.hora_inicio', 'h.hora_fim', 'h.dia_semana', 'h.intervalo_minutos', 'u.nome as medico_nome', 'e.nome as especialidade')
         .first()
 }
 
 const queryBuscarPacientePorUsuarioId = async (usuarioId) => {
-    return await knex('pacientes')
-        .where('usuario_id', usuarioId)
-        .select('id')
+    return await knex('pacientes as p')
+        .join('usuarios as u', 'p.usuario_id', 'u.id')
+        .where('p.usuario_id', usuarioId)
+        .select('p.id', 'p.usuario_id', 'u.nome', 'u.email')
         .first()
 }
 
