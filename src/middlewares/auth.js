@@ -25,7 +25,7 @@ const auth = async (req, res, next) => {
 
         const usuarioExistente = await queryBuscarUsuarioPeloId(id)
 
-        if (!usuarioExistente) {
+        if (!usuarioExistente || !usuarioExistente.ativo) {
             return res.status(401).json({ error: 'Usuário não encontrado'})
         }
 

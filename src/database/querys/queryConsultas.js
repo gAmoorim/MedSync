@@ -37,6 +37,56 @@ const queryAgendarConsulta = async (pacienteId, medicoId, horarioId, data, hora_
         .returning(['id', 'paciente_id', 'medico_id', 'data', 'hora_inicio', 'hora_fim', 'status', 'observacoes'])
 }
 
+const queryAgendarConsultaAtomica = async (pacienteId, medicoId, horarioId, data, hora_inicio, intervalo_minutos, observacoes) => {
+    const [h, m] = hora_inicio.split(':').map(Number)
+    const totalMinutos = h * 60 + m + intervalo_minutos
+    const hora_fim = `${String(Math.floor(totalMinutos / 60)).padStart(2, '0')}:${String(totalMinutos % 60).padStart(2, '0')}`
+
+    return await knex.transaction(async (trx) => {
+        const chavesBloqueio = [
+            `medico:${medicoId}:${data}:${hora_inicio}`,
+            `paciente:${pacienteId}:${data}:${hora_inicio}`
+        ].sort()
+
+        for (const chave of chavesBloqueio) {
+            await trx.raw('SELECT pg_advisory_xact_lock(hashtext(?))', [chave])
+        }
+
+        const pacienteOcupado = await trx('consultas')
+            .where('paciente_id', pacienteId)
+            .where('data', data)
+            .where('hora_inicio', hora_inicio)
+            .whereIn('status', ['agendada', 'confirmada'])
+            .first()
+
+        if (pacienteOcupado) return { conflito: 'paciente' }
+
+        const slotOcupado = await trx('consultas')
+            .where('medico_id', medicoId)
+            .where('data', data)
+            .where('hora_inicio', hora_inicio)
+            .whereIn('status', ['agendada', 'confirmada'])
+            .first()
+
+        if (slotOcupado) return { conflito: 'slot' }
+
+        const [consulta] = await trx('consultas')
+            .insert({
+                paciente_id: pacienteId,
+                medico_id: medicoId,
+                horario_atendimento_id: horarioId,
+                data,
+                hora_inicio,
+                hora_fim,
+                status: 'agendada',
+                observacoes
+            })
+            .returning(['id', 'paciente_id', 'medico_id', 'data', 'hora_inicio', 'hora_fim', 'status', 'observacoes'])
+
+        return { consulta }
+    })
+}
+
 const queryBuscarConsultaPeloId = async (consulta_id) => {
     return await knex('consultas as c')
         .join('medicos as m', 'c.medico_id', 'm.id')
@@ -127,6 +177,7 @@ module.exports = {
     queryVerificarSlotDisponivel,
     queryVerificarConsultaPaciente,
     queryAgendarConsulta,
+    queryAgendarConsultaAtomica,
     queryBuscarConsultaPeloId,
     queryCancelarConsulta,
     queryHistoricoConsultas,

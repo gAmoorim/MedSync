@@ -1,8 +1,9 @@
-const { queryVerificarSlotDisponivel, queryVerificarConsultaPaciente, queryAgendarConsulta, queryBuscarConsultaPeloId, queryCancelarConsulta, queryHistoricoConsultas, queryDetalheConsultaPaciente } = require("../database/querys/queryConsultas")
+const { queryAgendarConsultaAtomica, queryBuscarConsultaPeloId, queryCancelarConsulta, queryHistoricoConsultas, queryDetalheConsultaPaciente } = require("../database/querys/queryConsultas")
 const { queryHorariosDisponiveis } = require("../database/querys/queryHorarioDisp")
 const { queryBuscarPacientePeloCpf, queryPerfilPaciente, queryAtualizarPaciente, queryBuscarSenhaAtualPaciente, queryAtualizarSenhaPaciente, queryVerificarHorario, queryBuscarPacientePorUsuarioId } = require("../database/querys/queryPacientes")
 const { queryBuscarUsuarioPeloEmail, queryCriarPaciente } = require("../database/querys/queryUsuarios")
 const { validarEmail, validarTelefone, validarCPF } = require("../utils/validations")
+const { validarDataISO, validarHorario, validarPaginacao, validarStatusConsulta } = require('../utils/requestValidation')
 const { emailAgendamento, emailCancelamento  } = require('../services/emailService')
 const bcrypt = require('bcrypt')
 
@@ -184,6 +185,10 @@ const controllerAgendarConsulta = async (req, res) => {
         return res.status(400).json({ error: 'horario_id é obrigatório'})
     }
 
+    if (!validarDataISO(data) || !validarHorario(hora_inicio)) {
+        return res.status(400).json({ error: 'Data ou horário inválido' })
+    }
+
     try {
         const usuarioId = req.usuario.id
         const paciente = await queryBuscarPacientePorUsuarioId(usuarioId)
@@ -200,19 +205,27 @@ const controllerAgendarConsulta = async (req, res) => {
             return res.status(400).json({ error: 'Horário indisponivel'})
         }
 
-        const pacienteOcupado = await queryVerificarConsultaPaciente(pacienteId, data, hora_inicio)
+        const diaSemana = new Date(`${data}T00:00:00Z`).getUTCDay()
+        const paraMinutos = (hora) => {
+            const [horas, minutos] = hora.split(':').map(Number)
+            return horas * 60 + minutos
+        }
+        const inicioSolicitado = paraMinutos(hora_inicio)
+        const inicioDisponibilidade = paraMinutos(horario.hora_inicio)
+        const fimDisponibilidade = paraMinutos(horario.hora_fim)
 
-        if (pacienteOcupado) {
-            return res.status(409).json({ error: 'Você já possui uma consulta neste horário' })
+        if (
+            horario.dia_semana !== diaSemana ||
+            data < horario.data_inicio_vigencia ||
+            (horario.data_fim_vigencia && data > horario.data_fim_vigencia) ||
+            inicioSolicitado < inicioDisponibilidade ||
+            inicioSolicitado + horario.intervalo_minutos > fimDisponibilidade ||
+            (inicioSolicitado - inicioDisponibilidade) % horario.intervalo_minutos !== 0
+        ) {
+            return res.status(400).json({ error: 'O horário informado não está disponível para esta data' })
         }
 
-        const slotOcupado = await queryVerificarSlotDisponivel(horario.medico_id, data, hora_inicio)
-
-        if (slotOcupado) {
-            return res.status(409).json({ error: 'Este horário já está ocupado' })
-        }
-
-        const consulta = await queryAgendarConsulta(
+        const resultadoAgendamento = await queryAgendarConsultaAtomica(
             pacienteId,
             horario.medico_id,
             horario_id,
@@ -221,6 +234,16 @@ const controllerAgendarConsulta = async (req, res) => {
             horario.intervalo_minutos,
             observacoes
         )
+
+        if (resultadoAgendamento.conflito === 'paciente') {
+            return res.status(409).json({ error: 'Você já possui uma consulta neste horário' })
+        }
+
+        if (resultadoAgendamento.conflito === 'slot') {
+            return res.status(409).json({ error: 'Este horário já está ocupado' })
+        }
+
+        const { consulta } = resultadoAgendamento
 
         // EMAIL CONFIRMANDO CONSULTA
         const dados = {
@@ -231,13 +254,20 @@ const controllerAgendarConsulta = async (req, res) => {
             hora_inicio
         }
 
-        await emailAgendamento(paciente.email, dados)
+        try {
+            await emailAgendamento(paciente.email, dados)
+        } catch (error) {
+            console.error('Falha ao enviar e-mail de agendamento:', error)
+        }
 
         return res.status(201).json({ mensagem: 'consulta agendada', consulta})
 
     } catch (error) {
+        if (error.code === '23505') {
+            return res.status(409).json({ error: 'Este horário acabou de ser reservado por outro paciente' })
+        }
         console.error('Ocorreu um erro ao agendar consulta:', error)
-        return res.status(500).json({ error: `Erro ao agendar consulta: ${error.message}`})
+        return res.status(500).json({ error: 'Erro ao agendar consulta' })
     }
 }
 
@@ -289,18 +319,27 @@ const controllerCancelarConsultaPaciente = async (req, res) => {
 
         console.log(dados)
 
-        await emailCancelamento(paciente.email, dados)
+        try {
+            await emailCancelamento(paciente.email, dados)
+        } catch (error) {
+            console.error('Falha ao enviar e-mail de cancelamento:', error)
+        }
 
         return res.status(200).json({ mensagem: 'Consulta cancelada com sucesso' })
     } catch (error) {
         console.error('Ocorreu um erro cancelar a consulta:', error)
-        return res.status(500).json({ error: `Erro ao cancelar a consulta: ${error.message}`})
+        return res.status(500).json({ error: 'Erro ao cancelar a consulta' })
     }
 }
 
 const controllerHistoricoConsultasPaciente = async (req, res) => {
     const { status, pagina = 1, limite = 10 } = req.query
     const usuarioId = req.usuario.id
+
+    const paginacao = validarPaginacao(pagina, limite)
+    if (!paginacao || !validarStatusConsulta(status)) {
+        return res.status(400).json({ error: 'Parâmetros de paginação ou status inválidos' })
+    }
 
     try {
         const paciente = await queryBuscarPacientePorUsuarioId(usuarioId)
@@ -309,11 +348,7 @@ const controllerHistoricoConsultasPaciente = async (req, res) => {
             return res.status(404).json({ error: 'Nenhum paciente encontrado com esse id'})
         }
         
-        const consultas = await queryHistoricoConsultas(paciente.id, status, pagina, limite)
-
-        if (consultas.length === 0) {
-            return res.status(404).json({ error: 'Nenhuma consulta encontrada.'})
-        }
+        const consultas = await queryHistoricoConsultas(paciente.id, status, paginacao.pagina, paginacao.limite)
 
         return res.status(200).json({ mensagem: "consultas do paciente", consultas})
     } catch (error) {

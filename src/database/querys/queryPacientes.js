@@ -58,7 +58,7 @@ const queryVerificarHorario = async (horario_id) => {
         .where('h.id', horario_id)
         .where('h.ativo', true)
         .where('u.ativo', true)
-        .select('h.id', 'h.medico_id', 'h.hora_inicio', 'h.hora_fim', 'h.dia_semana', 'h.intervalo_minutos', 'u.nome as medico_nome', 'e.nome as especialidade')
+        .select('h.id', 'h.medico_id', 'h.hora_inicio', 'h.hora_fim', 'h.dia_semana', 'h.intervalo_minutos', 'h.data_inicio_vigencia', 'h.data_fim_vigencia', 'u.nome as medico_nome', 'e.nome as especialidade')
         .first()
 }
 

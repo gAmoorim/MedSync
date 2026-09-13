@@ -2,14 +2,14 @@ const knex = require('../connection')
 
 const queryBuscarUsuarioPeloEmail = async (emailFormatado) => {
     return await knex('usuarios')
-    .select('id', 'nome', 'email', 'senha_hash', 'tipo')
+    .select('id', 'nome', 'email', 'senha_hash', 'tipo', 'ativo')
     .where({ email: emailFormatado})
     .first()
 }
 
 const queryBuscarUsuarioPeloId = async (usuarioId) => {
     return await knex('usuarios')
-    .select('id', 'nome', 'email', 'tipo', 'criado_em')
+    .select('id', 'nome', 'email', 'tipo', 'ativo', 'criado_em')
     .where({id: usuarioId})
     .first()
 }

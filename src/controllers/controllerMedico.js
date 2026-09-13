@@ -1,10 +1,11 @@
 const { queryAgendaMedico, queryBuscarMedicoPorUsuarioId, queryPacientesAgendadosMedico, queryDetalheConsultaMedico, queryConcluirConsulta, queryConfirmarConsulta, queryVerificarConflitoHorario, queryDefinirHorarios, queryListarHorariosMedico, queryBuscarHorarioMedico, queryVerificarConsultasNoHorario, queryAtualizarHorario, queryInativarHorario, queryPerfilMedico, queryAtualizarPerfilMedico } = require("../database/querys/queryMedico")
 const { emailConfirmacao } = require("../services/emailService")
+const { validarDataISO, validarPaginacao, validarStatusConsulta } = require('../utils/requestValidation')
 
 const controllerAgendaMedica = async (req, res) => {
     const { data_inicio, data_fim } = req.query
 
-    if (!data_inicio || !data_fim) {
+    if (!validarDataISO(data_inicio) || !validarDataISO(data_fim)) {
         return res.status(400).json({ error: 'Informe a data de inicio e de fim' })
     }
 
@@ -26,10 +27,6 @@ const controllerAgendaMedica = async (req, res) => {
         const medico = await queryBuscarMedicoPorUsuarioId(usuarioId)
         const consultas = await queryAgendaMedico(medico.id, data_inicio, data_fim)
 
-        if (consultas.length === 0) {
-            return res.status(404).json({ error: 'Nenhuma consulta encontrada no período informado' })
-        }
-
         return res.status(200).json({ mensagem: 'Agenda do médico', consultas })
     } catch (error) {
         console.error('Ocorreu um erro ao listar as consultas do médico:', error)
@@ -41,6 +38,11 @@ const controllerPacientesAgendadosMedico = async (req, res) => {
     const hoje = new Date().toISOString().split('T')[0]
     const {data = hoje, status, pagina = 1, limite = 10} = req.query
 
+    const paginacao = validarPaginacao(pagina, limite)
+    if (!validarDataISO(data) || !validarStatusConsulta(status) || !paginacao) {
+        return res.status(400).json({ error: 'Parâmetros de data, status ou paginação inválidos' })
+    }
+
     try {
         const usuarioId = req.usuario.id
         const medico = await queryBuscarMedicoPorUsuarioId(usuarioId)
@@ -49,11 +51,7 @@ const controllerPacientesAgendadosMedico = async (req, res) => {
             return res.status(404).json({ error: 'Médico não encontrado'})
         }
 
-        const consultas = await queryPacientesAgendadosMedico(medico.id, data, status, pagina, limite)
-
-        if (consultas.length === 0) {
-            return res.status(404).json({ error: 'Nenhuma consulta encontrada' })
-        }
+        const consultas = await queryPacientesAgendadosMedico(medico.id, data, status, paginacao.pagina, paginacao.limite)
         
         return res.status(200).json({ mensagem: 'Consultas do médico', consultas })
     } catch (error) {
@@ -149,6 +147,10 @@ const controllerConfirmarConsulta = async (req, res) => {
         const medico = await queryBuscarMedicoPorUsuarioId(usuarioId)
         const consulta = await queryDetalheConsultaMedico(consulta_id)
 
+        if (!consulta) {
+            return res.status(404).json({ error: 'Nenhuma consulta encontrada' })
+        }
+
         if (medico.id !== consulta.medico_id) {
             return res.status(400).json({ error: 'A consulta informada não pertence ao médico logado'})
         }
@@ -167,7 +169,11 @@ const controllerConfirmarConsulta = async (req, res) => {
             hora_inicio: consulta.hora
         }
 
-        await emailConfirmacao(consulta.paciente_email, dados)
+        try {
+            await emailConfirmacao(consulta.paciente_email, dados)
+        } catch (error) {
+            console.error('Falha ao enviar e-mail de confirmação:', error)
+        }
   
         return res.status(200).json({ mensagem: 'Consulta confirmada', consulta_confirmada})
     } catch (error) {
@@ -196,7 +202,7 @@ const controllerDefinirHorario = async (req, res) => {
     const totalMinutos = (hFim * 60 + mFim) - (hInicio * 60 + mInicio)
 
     if (totalMinutos < intervalo_minutos) {
-        return res.status(400).json9({ error: 'O intervalo informado não gera nenhum slot de atendimento'})
+        return res.status(400).json({ error: 'O intervalo informado não gera nenhum slot de atendimento'})
     }
 
     try {
@@ -235,10 +241,6 @@ const controllerListarHorariosMedico = async (req, res) => {
         
         const medico = await queryBuscarMedicoPorUsuarioId(usuarioId)
         const horarios = await queryListarHorariosMedico(medico.id)
-
-        if (!horarios) {
-            return res.status(404).json({ error: 'Nenhum horário encontrado'})
-        }
 
         return res.status(200).json({ mensagem: 'Lista de horários', horarios})
     } catch (error) {

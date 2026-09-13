@@ -17,6 +17,10 @@ const controllerLoginUsuario = async (req,res) => {
             return res.status(401).json({ error: 'email ou senha incorreto'})
         }
 
+        if (!usuario.ativo) {
+            return res.status(403).json({ error: 'Usuário inativo' })
+        }
+
         const senhaCorreta = await bcrypt.compare(senha, usuario.senha_hash)
 
         if (!senhaCorreta) {
@@ -42,7 +46,7 @@ const controllerLoginUsuario = async (req,res) => {
         })
     } catch (error) {
         console.error("Erro interno do servidor:", error)
-        return res.status(500).json({ error: `Erro interno do servidor: ${error.message}`})
+        return res.status(500).json({ error: 'Erro interno do servidor' })
     }
 }
 

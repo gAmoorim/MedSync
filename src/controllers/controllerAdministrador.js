@@ -5,6 +5,7 @@ const { queryVerificarConsultasFuturasMedico, queryBuscarConsultaPeloId } = requ
 const { queryRelatorioConsultas, queryRelatorioMedicos } = require("../database/querys/queryRelatorios")
 const { emailCancelamento } = require("../services/emailService")
 const bcrypt = require('bcrypt')
+const { validarDataISO, validarPaginacao, validarStatusConsulta } = require('../utils/requestValidation')
 
 const controllerCadastrarMedico = async (req, res) => {
     const { nome, email, senha, crm, especialidade_id, telefone } = req.body
@@ -57,13 +58,14 @@ const controllerCadastrarMedico = async (req, res) => {
 
 const controllerListarMedicos = async (req, res) => {
     const { especialidade, ativo, pagina = 1, limite = 10 } = req.query
+    const paginacao = validarPaginacao(pagina, limite)
+
+    if (!paginacao || (ativo !== undefined && ativo !== 'true' && ativo !== 'false')) {
+        return res.status(400).json({ error: 'Parâmetros de paginação ou status inválidos' })
+    }
 
     try {
-        const medicos = await queryListarMedicos(especialidade, ativo, pagina, limite)
-
-        if (medicos.length === 0) {
-            return res.status(404).json({ error: 'Nenhum médico encontrado'})
-        }
+        const medicos = await queryListarMedicos(especialidade, ativo, paginacao.pagina, paginacao.limite)
 
         return res.status(200).json({ mensagem: 'Médicos encontrados', medicos})
     } catch (error) {
@@ -171,13 +173,14 @@ const controllerInativarMedico = async (req,res) => {
 
 const controllerListarPacientes = async (req, res) => {
     const {nome, cpf, pagina = 1, limite = 10} = req.query
+    const paginacao = validarPaginacao(pagina, limite)
+
+    if (!paginacao) {
+        return res.status(400).json({ error: 'Parâmetros de paginação inválidos' })
+    }
 
     try {
-        const pacientes = await queryListarPacientes(nome, cpf, pagina, limite)
-
-        if (pacientes.length === 0) {
-            return res.status(404).json({ error: 'Nenhum paciente encontrado'})
-        }
+        const pacientes = await queryListarPacientes(nome, cpf, paginacao.pagina, paginacao.limite)
 
         return res.status(200).json({ mensagem: 'pacientes encontrados', pacientes})
     } catch (error) {
@@ -242,13 +245,20 @@ const controllerAtualizarPacienteAdmin = async (req, res) => {
 
 const controllerListarConsultasAdmin = async (req, res) => {
     const {status, medico_id, paciente_id, data_inicio, data_fim, pagina = 1, limite = 10} = req.query
+    const paginacao = validarPaginacao(pagina, limite)
+
+    if (
+        !paginacao ||
+        !validarStatusConsulta(status) ||
+        (data_inicio && !validarDataISO(data_inicio)) ||
+        (data_fim && !validarDataISO(data_fim)) ||
+        (data_inicio && data_fim && data_inicio > data_fim)
+    ) {
+        return res.status(400).json({ error: 'Filtros ou paginação inválidos' })
+    }
 
     try {
-        const consultas = await queryListarConsultasAdmin(status, medico_id, paciente_id, data_inicio, data_fim, pagina, limite)
-
-        if (!consultas) {
-            return res.status(404).json({ error: 'Nenhuma consulta encontrada'})
-        }
+        const consultas = await queryListarConsultasAdmin(status, medico_id, paciente_id, data_inicio, data_fim, paginacao.pagina, paginacao.limite)
 
         return res.status(200).json({ mensagem: 'Consultas', consultas})
     } catch (error) {
@@ -288,7 +298,11 @@ const controllerCancelarConsultaAdmin = async (req, res) => {
             motivo: motivo_cancelamento
         }
 
-        await emailCancelamento(consulta.paciente_email, dados)
+        try {
+            await emailCancelamento(consulta.paciente_email, dados)
+        } catch (error) {
+            console.error('Falha ao enviar e-mail de cancelamento:', error)
+        }
         
         //await emailCancelamento(consulta.medico_email, dados)
 
@@ -329,10 +343,6 @@ const controllerRelatorioMedicos = async (req, res) => {
 
     try {
         const relatorio = await queryRelatorioMedicos(mes)
-
-        if (relatorio.length === 0) {
-            return res.status(404).json({ error: 'Nenhum médico ativo encontrado'})
-        }
 
         return res.status(200).json({ mensagem: 'Relatório de médicos', relatorio})
     } catch (error) {
