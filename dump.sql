@@ -101,6 +101,14 @@ CREATE TABLE consultas (
     CONSTRAINT chk_hora_fim_consulta CHECK (hora_fim > hora_inicio)
 );
 
+CREATE UNIQUE INDEX consultas_medico_slot_ativo_unico
+    ON consultas (medico_id, data, hora_inicio)
+    WHERE status IN ('agendada', 'confirmada');
+
+CREATE UNIQUE INDEX consultas_paciente_slot_ativo_unico
+    ON consultas (paciente_id, data, hora_inicio)
+    WHERE status IN ('agendada', 'confirmada');
+
 -- ============================================================
 -- NOTIFICACOES_EMAIL
 -- Log de todos os e-mails disparados pelo sistema
@@ -133,6 +141,3 @@ INSERT INTO especialidades (nome) VALUES
     ('Oftalmologia'),
     ('Psiquiatria'),
     ('Urologia');
-
-INSERT INTO usuarios (nome, email, senha, tipo) VALUES
-    ('Administrador', 'admin@clinica.com', 'senhahash', 'admin');
