@@ -66,8 +66,28 @@ const emailCancelamento = async (destinatario, dados) => {
     })
 }
 
+const emailRecuperacaoSenha = async (destinatario, dados) => {
+    await transporter.sendMail({
+        from: 'MedSync <noreply@medsync.com>',
+        to: destinatario,
+        subject: 'Recuperação de senha - MedSync',
+        html: `
+            <h2>Olá, ${dados.nome}!</h2>
+            <p>Recebemos uma solicitação para redefinir sua senha.</p>
+            <p>Clique no botão abaixo para criar uma nova senha. O link expira em <strong>1 hora</strong>.</p>
+            <a href="${dados.link}" style="display:inline-block;padding:12px 24px;background:#3468f5;color:#fff;border-radius:8px;text-decoration:none;font-weight:600;">
+                Redefinir senha
+            </a>
+            <p style="margin-top:16px;color:#64748b;font-size:14px;">
+                Se você não solicitou a recuperação, ignore este email.
+            </p>
+        `
+    })
+}
+
 module.exports = {
     emailAgendamento,
     emailConfirmacao,
-    emailCancelamento
+    emailCancelamento,
+    emailRecuperacaoSenha
 }

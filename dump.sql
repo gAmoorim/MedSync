@@ -76,6 +76,19 @@ CREATE TABLE horarios_atendimento (
     CONSTRAINT chk_vigencia CHECK (data_fim_vigencia IS NULL OR data_fim_vigencia >= data_inicio_vigencia)
 );
 
+-- ============================================================
+-- TOKEN RECUPERAÇÃO DE SENHA
+-- ============================================================
+
+CREATE TABLE tokens_recuperacao (
+    id          SERIAL PRIMARY KEY,
+    usuario_id  INTEGER     NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
+    token       VARCHAR(64) NOT NULL UNIQUE,
+    expira_em   TIMESTAMP   NOT NULL,
+    usado       BOOLEAN     NOT NULL DEFAULT FALSE,
+    criado_em   TIMESTAMP   NOT NULL DEFAULT NOW()
+);
+
 
 -- ============================================================
 -- CONSULTAS
