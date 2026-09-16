@@ -98,7 +98,12 @@ export default function LoginPage() {
             />
 
             <div className="flex flex-col gap-1">
-              <label className="label">Senha</label>
+              <div className="flex items-center justify-between">
+                <label className="label">Senha</label>
+                <Link to="/recuperar-senha" className="text-xs text-primary-600 hover:underline">
+                  Esqueci minha senha
+                </Link>
+              </div>
               <div className="relative">
                 <input
                   type={showPassword ? 'text' : 'password'}

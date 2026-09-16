@@ -4,17 +4,16 @@ import { Calendar, Search, ChevronRight } from 'lucide-react'
 import { getAgenda } from '../../api/medico'
 import { useToast } from '../../contexts/ToastContext'
 import { Button, Input, Card, Loading, EmptyState, ErrorState, Badge } from '../../components/ui'
-import { formatDate, getDataLocal, getErrorMessage, getStatusBadge, getStatusLabel } from '../../utils'
+import { formatDate, getErrorMessage, getStatusBadge, getStatusLabel } from '../../utils'
 import type { Consulta, StatusConsulta } from '../../types'
 
 export default function AgendaMedicoPage() {
   const { error: toastError } = useToast()
-  const [dataInicio, setDataInicio] = useState(() => getDataLocal())
-  const [dataFim, setDataFim] = useState(() => {
-    const proximaSemana = new Date()
-    proximaSemana.setDate(proximaSemana.getDate() + 7)
-    return getDataLocal(proximaSemana)
-  })
+  const today = new Date().toISOString().split('T')[0]
+  const nextWeek = new Date(Date.now() + 7 * 86400000).toISOString().split('T')[0]
+
+  const [dataInicio, setDataInicio] = useState(today)
+  const [dataFim, setDataFim] = useState(nextWeek)
   const [consultas, setConsultas] = useState<Consulta[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(false)

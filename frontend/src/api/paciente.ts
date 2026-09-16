@@ -53,10 +53,7 @@ export const getHistoricoConsultas = async (params: {
   limite?: number
 }): Promise<Consulta[]> => {
   const { data } = await api.get('/pacientes/consultas', { params })
-  return data.consultas.map((consulta: Consulta) => ({
-    ...consulta,
-    hora: consulta.hora ?? consulta.hora_inicio,
-  }))
+  return data.consultas
 }
 
 export const getDetalheConsulta = async (consulta_id: number): Promise<Consulta> => {

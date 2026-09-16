@@ -17,3 +17,17 @@ export const registrarPaciente = async (dados: {
   const { data } = await api.post('/pacientes/registro', dados)
   return data
 }
+
+export const solicitarRecuperacaoSenha = async (email: string) => {
+  const { data } = await api.post('/recuperar-senha', { email })
+  return data
+}
+
+export const resetarSenha = async (dados: {
+  token: string
+  nova_senha: string
+  confirmar_nova_senha: string
+}) => {
+  const { data } = await api.post('/resetar-senha', dados)
+  return data
+}

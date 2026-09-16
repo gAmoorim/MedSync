@@ -10,11 +10,6 @@ import { getErrorMessage } from '../../utils'
 import type { Medico } from '../../types'
 import api from '../../api/client'
 
-const ESPECIALIDADES_PADRAO = [
-  'Clínica Geral', 'Cardiologia', 'Dermatologia', 'Ortopedia', 'Pediatria',
-  'Ginecologia', 'Neurologia', 'Oftalmologia', 'Psiquiatria', 'Urologia',
-].map((nome, index) => ({ id: index + 1, nome }))
-
 const schema = z.object({
   nome: z.string().min(3, 'Nome obrigatório'),
   email: z.string().email('Email inválido'),
@@ -56,9 +51,7 @@ export default function AdminMedicosPage() {
 
   useEffect(() => {
     fetchMedicos()
-    api.get('/especialidades')
-      .then((r) => setEspecialidades(r.data.especialidades ?? ESPECIALIDADES_PADRAO))
-      .catch(() => setEspecialidades(ESPECIALIDADES_PADRAO))
+    api.get('/especialidades').then(r => setEspecialidades(r.data.especialidades ?? [])).catch(() => {})
   }, [fetchMedicos])
 
   const filtered = medicos.filter(m =>

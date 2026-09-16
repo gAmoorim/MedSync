@@ -1,19 +1,6 @@
 import api from './client'
 import type { Consulta, Medico, Paciente, RelatorioConsultas, RelatorioMedico } from '../types'
 
-type MedicoDaApi = Omit<Medico, 'id'> & { id?: number; medico_id?: number }
-type PacienteDaApi = Omit<Paciente, 'id'> & { id?: number; paciente_id?: number }
-
-const normalizarMedico = ({ medico_id, ...medico }: MedicoDaApi): Medico => ({
-  ...medico,
-  id: medico.id ?? medico_id!,
-})
-
-const normalizarPaciente = ({ paciente_id, ...paciente }: PacienteDaApi): Paciente => ({
-  ...paciente,
-  id: paciente.id ?? paciente_id!,
-})
-
 // Médicos
 export const cadastrarMedico = async (dados: {
   nome: string
@@ -34,7 +21,7 @@ export const getMedicos = async (params?: {
   limite?: number
 }): Promise<Medico[]> => {
   const { data } = await api.get('/admin/medicos', { params })
-  return data.medicos.map(normalizarMedico)
+  return data.medicos
 }
 
 export const getDetalheMedico = async (medico_id: number) => {
@@ -60,7 +47,7 @@ export const getPacientes = async (params?: {
   limite?: number
 }): Promise<Paciente[]> => {
   const { data } = await api.get('/admin/pacientes', { params })
-  return data.pacientes.map(normalizarPaciente)
+  return data.pacientes
 }
 
 export const getDetalhePaciente = async (paciente_id: number) => {

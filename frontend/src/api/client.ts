@@ -15,9 +15,12 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      localStorage.removeItem('medsync_token')
-      localStorage.removeItem('medsync_usuario')
-      window.location.href = '/login'
+      const isLoginRoute = error.config?.url?.includes('/login')
+      if (!isLoginRoute) {
+        localStorage.removeItem('medsync_token')
+        localStorage.removeItem('medsync_usuario')
+        window.location.href = '/login'
+      }
     }
     return Promise.reject(error)
   }

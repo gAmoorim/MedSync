@@ -5,6 +5,8 @@ import { ProtectedRoute } from './routes/ProtectedRoute'
 
 import LoginPage from './pages/auth/LoginPage'
 import RegistroPage from './pages/auth/RegistroPage'
+import RecuperarSenhaPage from './pages/auth/RecuperarSenhaPage'
+import ResetarSenhaPage from './pages/auth/ResetarSenhaPage'
 
 import PacienteDashboard from './pages/paciente/PacienteDashboard'
 import AgendarConsultaPage from './pages/paciente/AgendarConsultaPage'
@@ -38,6 +40,8 @@ function AppRoutes() {
       <Route path="/" element={<RootRedirect />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/registro" element={<RegistroPage />} />
+      <Route path="/recuperar-senha" element={<RecuperarSenhaPage />} />
+      <Route path="/resetar-senha" element={<ResetarSenhaPage />} />
 
       <Route element={<ProtectedRoute tipo="paciente" />}>
         <Route path="/paciente" element={<PacienteDashboard />} />
