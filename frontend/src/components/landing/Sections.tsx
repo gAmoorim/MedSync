@@ -294,7 +294,7 @@ export function Sobre() {
             <p className="leading-relaxed text-slate-500">
               Nossa equipe é formada por médicos especialistas com formação
               nas melhores instituições do Brasil e do exterior, comprometidos
-              com seu bem-estar e qualidade de vida.
+              com seu bem-estar e qualidade de vida. teste
             </p>
           </div>
 
