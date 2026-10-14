@@ -6,7 +6,10 @@ export const cn = (...inputs: ClassValue[]) => twMerge(clsx(inputs))
 
 export const formatDate = (d: string) => {
   if (!d) return '-'
-  return new Date(d + 'T00:00:00').toLocaleDateString('pt-BR')
+
+  return new Date(d).toLocaleDateString('pt-BR', {
+    timeZone: 'UTC',
+  })
 }
 
 export const formatCPF = (cpf: string) =>

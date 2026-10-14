@@ -5,7 +5,7 @@ export interface Usuario { id: number; nome: string; email: string; tipo: TipoUs
 export interface AuthResponse { token: string; usuario: Usuario }
 
 export interface Paciente {
-  id: number; usuario_id: number; nome: string; email: string
+  paciente_id: number; usuario_id: number; nome: string; email: string
   cpf: string; telefone: string; data_nascimento: string; ativo?: boolean
 }
 

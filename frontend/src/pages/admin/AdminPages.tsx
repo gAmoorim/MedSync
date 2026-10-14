@@ -263,7 +263,7 @@ export function AdminPacientesPage() {
               </thead>
               <tbody>
                 {filtered.map(p => (
-                  <tr key={p.id} className="border-b border-slate-50 hover:bg-slate-50 transition-colors">
+                  <tr key={p.paciente_id} className="border-b border-slate-50 hover:bg-slate-50 transition-colors">
                     <td className="py-3.5 px-5">
                       <div className="flex items-center gap-3">
                         <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 font-bold text-xs shrink-0">
