@@ -3,100 +3,77 @@ import { Link } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { Stethoscope, Mail, ArrowLeft, CheckCircle } from 'lucide-react'
-import { solicitarRecuperacaoSenha } from '../../api/auth'
+import { Stethoscope, Mail, ArrowLeft, CheckCircle2 } from 'lucide-react'
+import { solicitarRecuperacao } from '../../api'
 import { useToast } from '../../contexts/ToastContext'
 import { Button, Input } from '../../components/ui'
-import { getErrorMessage } from '../../utils'
+import { getErr } from '../../utils'
 
-const schema = z.object({
-  email: z.string().email('Email inválido'),
-})
-
-type FormData = z.infer<typeof schema>
+const schema = z.object({ email: z.string().email('E-mail inválido') })
+type F = z.infer<typeof schema>
 
 export default function RecuperarSenhaPage() {
-  const { error: toastError } = useToast()
-  const [enviado, setEnviado] = useState(false)
+  const { error } = useToast()
+  const [sent, setSent] = useState(false)
 
-  const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<FormData>({
+  const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<F>({
     resolver: zodResolver(schema),
   })
 
-  const onSubmit = async (data: FormData) => {
-    try {
-      await solicitarRecuperacaoSenha(data.email)
-      setEnviado(true)
-    } catch (err) {
-      toastError(getErrorMessage(err))
-    }
+  const onSubmit = async (d: F) => {
+    try { await solicitarRecuperacao(d.email); setSent(true) }
+    catch (e) { error(getErr(e)) }
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-6 bg-slate-50">
+    <div className="min-h-screen flex items-center justify-center bg-slate-50 p-4">
       <div className="w-full max-w-sm">
-        {/* Logo */}
-        <div className="flex items-center gap-2 mb-8">
-          <div className="w-8 h-8 bg-primary-500 rounded-lg flex items-center justify-center">
-            <Stethoscope size={16} className="text-white" />
+        <Link to="/" className="flex items-center gap-2 mb-6">
+          <div className="w-7 h-7 bg-cyan-500 rounded-lg flex items-center justify-center">
+            <Stethoscope size={13} className="text-white" />
           </div>
-          <span className="font-semibold text-slate-900">MedSync</span>
-        </div>
+          <span className="font-bold text-navy-900">Med<span className="text-cyan-500">Sync</span></span>
+        </Link>
 
-        <div className="card">
-          {enviado ? (
-            /* Success state */
-            <div className="text-center py-4">
-              <div className="w-16 h-16 bg-success-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                <CheckCircle size={32} className="text-success-500" />
+        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-8">
+          {sent ? (
+            <div className="text-center py-2">
+              <div className="w-14 h-14 bg-emerald-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                <CheckCircle2 size={28} className="text-emerald-500" />
               </div>
-              <h2 className="text-xl font-bold text-slate-900 mb-2">Email enviado!</h2>
-              <p className="text-sm text-slate-500 mb-6">
-                Se este email estiver cadastrado, você receberá as instruções para redefinir sua senha em breve. Verifique também a caixa de spam.
+              <h2 className="text-xl font-bold text-navy-900 mb-2">E-mail enviado!</h2>
+              <p className="text-sm text-slate-400 mb-6 leading-relaxed">
+                Caso este e-mail esteja cadastrado, você receberá as instruções em breve. Verifique também o spam.
               </p>
               <Link to="/login">
                 <Button variant="secondary" className="w-full">
-                  <ArrowLeft size={16} />
-                  Voltar para o login
+                  <ArrowLeft size={15} /> Voltar ao login
                 </Button>
               </Link>
             </div>
           ) : (
-            /* Form state */
             <>
               <div className="mb-6">
-                <div className="w-12 h-12 bg-primary-50 rounded-xl flex items-center justify-center mb-4">
-                  <Mail size={22} className="text-primary-500" />
+                <div className="w-11 h-11 bg-navy-950 rounded-xl flex items-center justify-center mb-4">
+                  <Mail size={20} className="text-cyan-400" />
                 </div>
-                <h2 className="text-xl font-bold text-slate-900">Recuperar senha</h2>
-                <p className="text-slate-500 text-sm mt-1">
-                  Digite seu email e enviaremos um link para redefinir sua senha.
+                <h2 className="text-xl font-bold text-navy-900">Recuperar senha</h2>
+                <p className="text-slate-400 text-sm mt-1">
+                  Informe seu e-mail e enviaremos um link para redefinir sua senha.
                 </p>
               </div>
 
               <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-                <Input
-                  label="Email cadastrado"
-                  type="email"
-                  placeholder="seu@email.com"
-                  error={errors.email?.message}
-                  {...register('email')}
-                />
-
+                <Input label="E-mail cadastrado" type="email" placeholder="seu@email.com"
+                  error={errors.email?.message} {...register('email')} />
                 <Button type="submit" className="w-full" loading={isSubmitting}>
                   Enviar link de recuperação
                 </Button>
               </form>
 
-              <div className="mt-4 text-center">
-                <Link
-                  to="/login"
-                  className="text-sm text-slate-500 hover:text-slate-700 flex items-center justify-center gap-1"
-                >
-                  <ArrowLeft size={14} />
-                  Voltar para o login
-                </Link>
-              </div>
+              <Link to="/login" className="flex items-center justify-center gap-1 text-sm text-slate-400 hover:text-slate-600 mt-5 transition-colors">
+                <ArrowLeft size={14} /> Voltar ao login
+              </Link>
             </>
           )}
         </div>

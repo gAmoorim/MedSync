@@ -3,164 +3,86 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { User, Lock, Save } from 'lucide-react'
-import { getPerfil, atualizarPerfil, alterarSenha } from '../../api/paciente'
+import { getPacientePerfil, atualizarPacientePerfil, alterarSenhaPaciente } from '../../api'
 import { useToast } from '../../contexts/ToastContext'
-import { Button, Card, Input, Loading, ErrorState } from '../../components/ui'
-import { formatCPF, getErrorMessage } from '../../utils'
+import { Button, Input, Spinner, Err } from '../../components/ui'
+import { formatCPF, getErr } from '../../utils'
 import type { Paciente } from '../../types'
 
 const perfilSchema = z.object({
-  nome: z.string().min(3, 'Nome deve ter ao menos 3 caracteres'),
-  telefone: z.string().min(10, 'Telefone inválido'),
-  data_nascimento: z.string().min(1, 'Obrigatório'),
+  nome: z.string().min(3), telefone: z.string().min(10),
+  data_nascimento: z.string().min(1),
 })
-
 const senhaSchema = z.object({
-  senha_atual: z.string().min(1, 'Obrigatório'),
-  nova_senha: z.string().min(6, 'Mínimo 6 caracteres'),
-  confirmar_nova_senha: z.string().min(1, 'Obrigatório'),
-}).refine(d => d.nova_senha === d.confirmar_nova_senha, {
-  message: 'As senhas não conferem',
-  path: ['confirmar_nova_senha'],
-})
+  senha_atual: z.string().min(1),
+  nova_senha: z.string().min(6),
+  confirmar_nova_senha: z.string(),
+}).refine(d => d.nova_senha === d.confirmar_nova_senha, { message: 'Senhas não conferem', path: ['confirmar_nova_senha'] })
 
-type PerfilForm = z.infer<typeof perfilSchema>
-type SenhaForm = z.infer<typeof senhaSchema>
+type PF = z.infer<typeof perfilSchema>
+type SF = z.infer<typeof senhaSchema>
 
 export default function PerfilPacientePage() {
-  const { success, error: toastError } = useToast()
-  const [paciente, setPaciente] = useState<Paciente | null>(null)
+  const { success, error } = useToast()
+  const [p, setP] = useState<Paciente | null>(null)
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(false)
+  const [err, setErr] = useState(false)
 
-  const perfilForm = useForm<PerfilForm>({ resolver: zodResolver(perfilSchema) })
-  const senhaForm = useForm<SenhaForm>({ resolver: zodResolver(senhaSchema) })
+  const pf = useForm<PF>({ resolver: zodResolver(perfilSchema) })
+  const sf = useForm<SF>({ resolver: zodResolver(senhaSchema) })
 
   useEffect(() => {
-    getPerfil()
-      .then((p) => {
-        setPaciente(p)
-        perfilForm.reset({
-          nome: p.nome,
-          telefone: p.telefone,
-          data_nascimento: p.data_nascimento?.split('T')[0],
-        })
-      })
-      .catch(() => setError(true))
-      .finally(() => setLoading(false))
+    getPacientePerfil().then(d => { setP(d); pf.reset({ nome: d.nome, telefone: d.telefone, data_nascimento: d.data_nascimento?.split('T')[0] }) })
+      .catch(() => setErr(true)).finally(() => setLoading(false))
   }, [])
 
-  const onSalvarPerfil = async (data: PerfilForm) => {
-    try {
-      await atualizarPerfil(data)
-      success('Perfil atualizado com sucesso!')
-    } catch (err) {
-      toastError(getErrorMessage(err))
-    }
-  }
-
-  const onAlterarSenha = async (data: SenhaForm) => {
-    try {
-      await alterarSenha(data)
-      success('Senha alterada com sucesso!')
-      senhaForm.reset()
-    } catch (err) {
-      toastError(getErrorMessage(err))
-    }
-  }
-
-  if (loading) return <Loading />
-  if (error) return <ErrorState />
+  if (loading) return <Spinner />
+  if (err) return <Err />
 
   return (
-    <div className="space-y-6 max-w-2xl">
+    <div className="space-y-6 max-w-xl">
       <div>
-        <h1 className="text-2xl font-bold text-slate-900">Meu Perfil</h1>
-        <p className="text-slate-500 mt-1">Gerencie suas informações pessoais</p>
+        <h1 className="text-2xl font-bold text-navy-900">Meu Perfil</h1>
+        <p className="text-slate-400 text-sm mt-1">Gerencie suas informações pessoais</p>
       </div>
 
-      {/* Info read-only */}
-      <Card>
-        <div className="flex items-center gap-3 mb-4">
-          <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center">
-            <User size={18} className="text-slate-500" />
-          </div>
-          <div>
-            <p className="font-semibold text-slate-900">{paciente?.nome}</p>
-            <p className="text-sm text-slate-500">{paciente?.email}</p>
-          </div>
+      {/* Info card */}
+      <div className="app-card p-5 flex items-center gap-4">
+        <div className="w-14 h-14 rounded-full bg-navy-950 flex items-center justify-center text-cyan-400 text-xl font-bold shrink-0">
+          {p?.nome?.charAt(0)}
         </div>
-        <div className="bg-slate-50 rounded-xl px-4 py-3 text-sm text-slate-600">
-          CPF: <span className="font-medium">{paciente?.cpf ? formatCPF(paciente.cpf) : '-'}</span>
-          <span className="text-slate-300 mx-3">·</span>
-          CPF e email não podem ser alterados
+        <div>
+          <p className="font-bold text-navy-900">{p?.nome}</p>
+          <p className="text-sm text-slate-400">{p?.email}</p>
+          <p className="text-xs text-slate-300 mt-0.5">CPF: {p?.cpf ? formatCPF(p.cpf) : '-'}</p>
         </div>
-      </Card>
+      </div>
 
-      {/* Edit form */}
-      <Card>
-        <h2 className="font-semibold text-slate-900 mb-4">Dados Pessoais</h2>
-        <form onSubmit={perfilForm.handleSubmit(onSalvarPerfil)} className="space-y-4">
-          <Input
-            label="Nome completo"
-            error={perfilForm.formState.errors.nome?.message}
-            {...perfilForm.register('nome')}
-          />
-          <Input
-            label="Telefone"
-            placeholder="(85) 99999-9999"
-            error={perfilForm.formState.errors.telefone?.message}
-            {...perfilForm.register('telefone')}
-          />
-          <Input
-            label="Data de nascimento"
-            type="date"
-            error={perfilForm.formState.errors.data_nascimento?.message}
-            {...perfilForm.register('data_nascimento')}
-          />
+      {/* Perfil form */}
+      <div className="app-card p-6">
+        <h2 className="font-bold text-navy-900 mb-5 flex items-center gap-2"><User size={16} /> Dados pessoais</h2>
+        <form onSubmit={pf.handleSubmit(async d => { try { await atualizarPacientePerfil(d); success('Perfil atualizado!') } catch (e) { error(getErr(e)) } })} className="space-y-4">
+          <Input label="Nome completo" error={pf.formState.errors.nome?.message} {...pf.register('nome')} />
+          <Input label="Telefone" error={pf.formState.errors.telefone?.message} {...pf.register('telefone')} />
+          <Input label="Data de nascimento" type="date" error={pf.formState.errors.data_nascimento?.message} {...pf.register('data_nascimento')} />
           <div className="flex justify-end">
-            <Button type="submit" loading={perfilForm.formState.isSubmitting}>
-              <Save size={16} />
-              Salvar alterações
-            </Button>
+            <Button type="submit" size="sm" loading={pf.formState.isSubmitting}><Save size={14} /> Salvar</Button>
           </div>
         </form>
-      </Card>
+      </div>
 
-      {/* Change password */}
-      <Card>
-        <div className="flex items-center gap-2 mb-4">
-          <Lock size={18} className="text-slate-400" />
-          <h2 className="font-semibold text-slate-900">Alterar Senha</h2>
-        </div>
-        <form onSubmit={senhaForm.handleSubmit(onAlterarSenha)} className="space-y-4">
-          <Input
-            label="Senha atual"
-            type="password"
-            error={senhaForm.formState.errors.senha_atual?.message}
-            {...senhaForm.register('senha_atual')}
-          />
-          <Input
-            label="Nova senha"
-            type="password"
-            hint="Mínimo 6 caracteres"
-            error={senhaForm.formState.errors.nova_senha?.message}
-            {...senhaForm.register('nova_senha')}
-          />
-          <Input
-            label="Confirmar nova senha"
-            type="password"
-            error={senhaForm.formState.errors.confirmar_nova_senha?.message}
-            {...senhaForm.register('confirmar_nova_senha')}
-          />
+      {/* Senha form */}
+      <div className="app-card p-6">
+        <h2 className="font-bold text-navy-900 mb-5 flex items-center gap-2"><Lock size={16} /> Alterar senha</h2>
+        <form onSubmit={sf.handleSubmit(async d => { try { await alterarSenhaPaciente(d); success('Senha alterada!'); sf.reset() } catch (e) { error(getErr(e)) } })} className="space-y-4">
+          <Input label="Senha atual" type="password" error={sf.formState.errors.senha_atual?.message} {...sf.register('senha_atual')} />
+          <Input label="Nova senha" type="password" hint="Mínimo 6 caracteres" error={sf.formState.errors.nova_senha?.message} {...sf.register('nova_senha')} />
+          <Input label="Confirmar nova senha" type="password" error={sf.formState.errors.confirmar_nova_senha?.message} {...sf.register('confirmar_nova_senha')} />
           <div className="flex justify-end">
-            <Button type="submit" variant="secondary" loading={senhaForm.formState.isSubmitting}>
-              <Lock size={16} />
-              Alterar senha
-            </Button>
+            <Button type="submit" variant="secondary" size="sm" loading={sf.formState.isSubmitting}><Lock size={14} /> Alterar</Button>
           </div>
         </form>
-      </Card>
+      </div>
     </div>
   )
 }

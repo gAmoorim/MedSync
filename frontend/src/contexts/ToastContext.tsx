@@ -1,75 +1,58 @@
-import { createContext, useContext, useState, useCallback } from 'react'
-import type { ReactNode } from 'react'
-import { CheckCircle, XCircle, AlertCircle, X } from 'lucide-react'
+import { createContext, useContext, useState, useCallback, type ReactNode } from 'react'
+import { CheckCircle2, XCircle, X } from 'lucide-react'
+import { cn } from '../utils'
 
-type ToastType = 'success' | 'error' | 'warning'
+type Kind = 'success' | 'error'
+interface Toast { id: number; kind: Kind; msg: string }
 
-interface Toast {
-  id: number
-  type: ToastType
-  message: string
-}
+interface Ctx { success: (m: string) => void; error: (m: string) => void }
+const ToastCtx = createContext<Ctx | null>(null)
 
-interface ToastContextType {
-  success: (message: string) => void
-  error: (message: string) => void
-  warning: (message: string) => void
-}
-
-const ToastContext = createContext<ToastContextType | null>(null)
-
-let counter = 0
+let n = 0
 
 export function ToastProvider({ children }: { children: ReactNode }) {
   const [toasts, setToasts] = useState<Toast[]>([])
 
-  const addToast = useCallback((type: ToastType, message: string) => {
-    const id = ++counter
-    setToasts((prev) => [...prev, { id, type, message }])
-    setTimeout(() => setToasts((prev) => prev.filter((t) => t.id !== id)), 4000)
+  const add = useCallback((kind: Kind, msg: string) => {
+    const id = ++n
+    setToasts(p => [...p, { id, kind, msg }])
+    setTimeout(() => setToasts(p => p.filter(t => t.id !== id)), 4500)
   }, [])
 
-  const remove = (id: number) => setToasts((prev) => prev.filter((t) => t.id !== id))
-
-  const icons = {
-    success: <CheckCircle size={18} className="text-success-500 shrink-0" />,
-    error: <XCircle size={18} className="text-danger-500 shrink-0" />,
-    warning: <AlertCircle size={18} className="text-warning-500 shrink-0" />,
-  }
-
-  const borders = {
-    success: 'border-l-success-500',
-    error: 'border-l-danger-500',
-    warning: 'border-l-warning-500',
-  }
+  const remove = (id: number) => setToasts(p => p.filter(t => t.id !== id))
 
   return (
-    <ToastContext.Provider value={{
-      success: (m) => addToast('success', m),
-      error: (m) => addToast('error', m),
-      warning: (m) => addToast('warning', m),
-    }}>
+    <ToastCtx.Provider value={{ success: m => add('success', m), error: m => add('error', m) }}>
       {children}
-      <div className="fixed bottom-4 right-4 z-50 flex flex-col gap-2 max-w-sm w-full">
-        {toasts.map((toast) => (
+      <div className="fixed bottom-5 right-5 z-[999] flex flex-col gap-2 w-full max-w-sm pointer-events-none">
+        {toasts.map(t => (
           <div
-            key={toast.id}
-            className={`flex items-start gap-3 bg-white rounded-xl shadow-modal border border-slate-100 border-l-4 ${borders[toast.type]} p-4 animate-in slide-in-from-right-5`}
+            key={t.id}
+            className={cn(
+              'pointer-events-auto flex items-start gap-3 p-4 rounded-2xl shadow-2xl border',
+              'animate-fade-up',
+              t.kind === 'success'
+                ? 'bg-white border-emerald-100'
+                : 'bg-white border-red-100'
+            )}
           >
-            {icons[toast.type]}
-            <p className="text-sm text-slate-700 flex-1">{toast.message}</p>
-            <button onClick={() => remove(toast.id)} className="text-slate-400 hover:text-slate-600 shrink-0">
-              <X size={16} />
+            {t.kind === 'success'
+              ? <CheckCircle2 size={18} className="text-emerald-500 shrink-0 mt-0.5" />
+              : <XCircle size={18} className="text-red-500 shrink-0 mt-0.5" />
+            }
+            <p className="text-sm text-slate-700 flex-1 leading-snug">{t.msg}</p>
+            <button onClick={() => remove(t.id)} className="text-slate-300 hover:text-slate-500 shrink-0">
+              <X size={15} />
             </button>
           </div>
         ))}
       </div>
-    </ToastContext.Provider>
+    </ToastCtx.Provider>
   )
 }
 
-export function useToast() {
-  const ctx = useContext(ToastContext)
-  if (!ctx) throw new Error('useToast must be used within ToastProvider')
-  return ctx
+export const useToast = () => {
+  const c = useContext(ToastCtx)
+  if (!c) throw new Error('useToast must be inside ToastProvider')
+  return c
 }

@@ -5,24 +5,24 @@ const api = axios.create({
   headers: { 'Content-Type': 'application/json' },
 })
 
-api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('medsync_token')
-  if (token) config.headers.Authorization = `Bearer ${token}`
-  return config
+api.interceptors.request.use(cfg => {
+  const token = localStorage.getItem('ms_token')
+  if (token) cfg.headers.Authorization = `Bearer ${token}`
+  return cfg
 })
 
 api.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    if (error.response?.status === 401) {
-      const isLoginRoute = error.config?.url?.includes('/login')
-      if (!isLoginRoute) {
-        localStorage.removeItem('medsync_token')
-        localStorage.removeItem('medsync_usuario')
+  r => r,
+  err => {
+    if (err.response?.status === 401) {
+      const isLogin = err.config?.url?.includes('/login')
+      if (!isLogin) {
+        localStorage.removeItem('ms_token')
+        localStorage.removeItem('ms_user')
         window.location.href = '/login'
       }
     }
-    return Promise.reject(error)
+    return Promise.reject(err)
   }
 )
 

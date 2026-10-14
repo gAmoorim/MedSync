@@ -1,61 +1,53 @@
-import { createContext, useContext, useState } from 'react'
-import type { ReactNode } from 'react'
-import type { Usuario, TipoUsuario } from '../types'
+import { createContext, useContext, useState, type ReactNode } from 'react'
+import type { Usuario } from '../types'
 
-interface AuthContextType {
+interface Ctx {
   usuario: Usuario | null
   token: string | null
   isAuthenticated: boolean
-  login: (token: string, usuario: Usuario) => void
-  logout: () => void
   isPaciente: boolean
   isMedico: boolean
   isAdmin: boolean
+  login: (token: string, usuario: Usuario) => void
+  logout: () => void
 }
 
-const AuthContext = createContext<AuthContextType | null>(null)
+const AuthCtx = createContext<Ctx | null>(null)
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [usuario, setUsuario] = useState<Usuario | null>(() => {
-    const stored = localStorage.getItem('medsync_usuario')
-    return stored ? JSON.parse(stored) : null
+    try { return JSON.parse(localStorage.getItem('ms_user') ?? 'null') } catch { return null }
   })
-  const [token, setToken] = useState<string | null>(() => localStorage.getItem('medsync_token'))
+  const [token, setToken] = useState<string | null>(() => localStorage.getItem('ms_token'))
 
-  const login = (newToken: string, newUsuario: Usuario) => {
-    setToken(newToken)
-    setUsuario(newUsuario)
-    localStorage.setItem('medsync_token', newToken)
-    localStorage.setItem('medsync_usuario', JSON.stringify(newUsuario))
+  const login = (t: string, u: Usuario) => {
+    setToken(t); setUsuario(u)
+    localStorage.setItem('ms_token', t)
+    localStorage.setItem('ms_user', JSON.stringify(u))
   }
 
   const logout = () => {
-    setToken(null)
-    setUsuario(null)
-    localStorage.removeItem('medsync_token')
-    localStorage.removeItem('medsync_usuario')
+    setToken(null); setUsuario(null)
+    localStorage.removeItem('ms_token')
+    localStorage.removeItem('ms_user')
   }
 
-  const tipoIs = (tipo: TipoUsuario) => usuario?.tipo === tipo
-
   return (
-    <AuthContext.Provider value={{
-      usuario,
-      token,
+    <AuthCtx.Provider value={{
+      usuario, token,
       isAuthenticated: !!token && !!usuario,
-      login,
-      logout,
-      isPaciente: tipoIs('paciente'),
-      isMedico: tipoIs('medico'),
-      isAdmin: tipoIs('admin'),
+      isPaciente: usuario?.tipo === 'paciente',
+      isMedico: usuario?.tipo === 'medico',
+      isAdmin: usuario?.tipo === 'admin',
+      login, logout,
     }}>
       {children}
-    </AuthContext.Provider>
+    </AuthCtx.Provider>
   )
 }
 
-export function useAuth() {
-  const ctx = useContext(AuthContext)
-  if (!ctx) throw new Error('useAuth must be used within AuthProvider')
-  return ctx
+export const useAuth = () => {
+  const c = useContext(AuthCtx)
+  if (!c) throw new Error('useAuth must be inside AuthProvider')
+  return c
 }

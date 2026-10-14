@@ -1,147 +1,112 @@
 import { useEffect, useState, useCallback } from 'react'
 import { Link } from 'react-router-dom'
-import { Calendar, Filter, ChevronRight } from 'lucide-react'
-import { getHistoricoConsultas, cancelarConsulta } from '../../api/paciente'
+import { Calendar, Plus, ChevronRight } from 'lucide-react'
+import { getConsultasPaciente, cancelarConsultaPaciente } from '../../api'
 import { useToast } from '../../contexts/ToastContext'
-import { Badge, Card, Loading, EmptyState, ErrorState, ConfirmDialog, Select, Button } from '../../components/ui'
-import { formatDate, getStatusBadge, getStatusLabel, getErrorMessage } from '../../utils'
+import { Spinner, Err, Empty, Badge, Confirm } from '../../components/ui'
+import { formatDate, statusConfig, getErr } from '../../utils'
 import type { Consulta, StatusConsulta } from '../../types'
 
-const statusOptions = [
-  { value: '', label: 'Todos os status' },
-  { value: 'agendada', label: 'Agendada' },
-  { value: 'confirmada', label: 'Confirmada' },
-  { value: 'concluida', label: 'Concluída' },
-  { value: 'cancelada', label: 'Cancelada' },
+const STATUS_OPTS = [
+  { value: '', label: 'Todos' },
+  { value: 'agendada', label: 'Agendadas' },
+  { value: 'confirmada', label: 'Confirmadas' },
+  { value: 'concluida', label: 'Concluídas' },
+  { value: 'cancelada', label: 'Canceladas' },
 ]
 
 export default function ConsultasPacientePage() {
-  const { success, error: toastError } = useToast()
+  const { success, error } = useToast()
   const [consultas, setConsultas] = useState<Consulta[]>([])
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(false)
+  const [err, setErr] = useState(false)
   const [status, setStatus] = useState('')
   const [cancelId, setCancelId] = useState<number | null>(null)
   const [canceling, setCanceling] = useState(false)
 
-  const fetchConsultas = useCallback(async () => {
-    setLoading(true)
-    setError(false)
-    try {
-      const res = await getHistoricoConsultas({ status: status || undefined, limite: 20 })
-      setConsultas(res)
-    } catch {
-      setError(true)
-    } finally {
-      setLoading(false)
-    }
+  const fetch = useCallback(async () => {
+    setLoading(true); setErr(false)
+    try { setConsultas((await getConsultasPaciente({ status: status || undefined, limite: 30 })) ?? []) }
+    catch { setErr(true) }
+    finally { setLoading(false) }
   }, [status])
 
-  useEffect(() => { fetchConsultas() }, [fetchConsultas])
+  useEffect(() => { fetch() }, [fetch])
 
   const handleCancelar = async () => {
     if (!cancelId) return
     setCanceling(true)
-    try {
-      await cancelarConsulta(cancelId)
-      success('Consulta cancelada com sucesso.')
-      setCancelId(null)
-      fetchConsultas()
-    } catch (err) {
-      toastError(getErrorMessage(err))
-    } finally {
-      setCanceling(false)
-    }
+    try { await cancelarConsultaPaciente(cancelId); success('Consulta cancelada.'); setCancelId(null); fetch() }
+    catch (e) { error(getErr(e)) }
+    finally { setCanceling(false) }
   }
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Minhas Consultas</h1>
-          <p className="text-slate-500 mt-1">Histórico e próximas consultas</p>
+          <h1 className="text-2xl font-bold text-navy-900">Minhas Consultas</h1>
+          <p className="text-slate-400 text-sm mt-1">Histórico e próximas consultas</p>
         </div>
-        <Link to="/paciente/agendar">
-          <Button size="sm">
-            <Calendar size={14} />
-            Agendar
-          </Button>
+        <Link to="/app/paciente/agendar"
+          className="inline-flex items-center gap-2 bg-cyan-500 text-white text-sm font-semibold px-4 py-2.5 rounded-xl hover:bg-cyan-600 transition-colors">
+          <Plus size={15} /> Agendar
         </Link>
       </div>
 
-      {/* Filter */}
-      <div className="flex items-center gap-3">
-        <Filter size={16} className="text-slate-400 shrink-0" />
-        <Select
-          options={statusOptions}
-          value={status}
-          onChange={(e) => setStatus(e.target.value)}
-          className="max-w-[200px]"
-        />
+      {/* Filter tabs */}
+      <div className="flex gap-2 overflow-x-auto pb-1">
+        {STATUS_OPTS.map(o => (
+          <button key={o.value} onClick={() => setStatus(o.value)}
+            className={`px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all ${
+              status === o.value ? 'bg-navy-950 text-white' : 'bg-white border border-slate-200 text-slate-500 hover:border-slate-300'
+            }`}>
+            {o.label}
+          </button>
+        ))}
       </div>
 
-      {loading ? (
-        <Loading />
-      ) : error ? (
-        <ErrorState onRetry={fetchConsultas} />
-      ) : consultas.length === 0 ? (
-        <EmptyState
-          title="Nenhuma consulta encontrada"
-          description="Você ainda não possui consultas com este filtro"
-        />
+      {loading ? <Spinner /> : err ? <Err onRetry={fetch} /> : consultas.length === 0 ? (
+        <Empty title="Nenhuma consulta encontrada" />
       ) : (
-        <div className="space-y-3">
-          {consultas.map((c, i) => (
-            <Card key={i} className="p-4">
-              <div className="flex items-center gap-4">
-                <div className="w-10 h-10 rounded-xl bg-primary-50 flex items-center justify-center shrink-0">
-                  <Calendar size={18} className="text-primary-500" />
+        <div className="space-y-2">
+          {consultas.map((c, i) => {
+            const sc = statusConfig[c.status as StatusConsulta]
+            const podeCanc = c.status === 'agendada' || c.status === 'confirmada'
+            return (
+              <div key={i} className="app-card p-4 flex items-center gap-4">
+                <div className="w-10 h-10 rounded-xl bg-cyan-50 flex items-center justify-center shrink-0">
+                  <Calendar size={17} className="text-cyan-500" />
                 </div>
-
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <p className="font-medium text-slate-900 text-sm">{c.medico_nome}</p>
-                    <Badge variant={getStatusBadge(c.status as StatusConsulta).replace('badge-', '') as 'blue' | 'green' | 'red' | 'gray'}>
-                      {getStatusLabel(c.status as StatusConsulta)}
-                    </Badge>
+                    <p className="text-sm font-semibold text-navy-900">{c.medico_nome}</p>
+                    <Badge cls={sc.cls}>{sc.label}</Badge>
                   </div>
-                  <p className="text-xs text-slate-500 mt-0.5">
-                    {c.especialidade} · {formatDate(c.data)} · {c.hora}
-                  </p>
+                  <p className="text-xs text-slate-400 mt-0.5">{c.especialidade} · {formatDate(c.data)} · {c.hora}</p>
                 </div>
-
-                <div className="flex items-center gap-2 shrink-0">
-                  {(c.status === 'agendada' || c.status === 'confirmada') && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="text-danger-500 hover:bg-danger-50 hover:text-danger-600"
-                      onClick={() => setCancelId(c.consulta_id!)}
-                    >
+                <div className="flex items-center gap-1 shrink-0">
+                  {podeCanc && (
+                    <button onClick={() => setCancelId(c.consulta_id!)}
+                      className="text-xs text-red-500 font-semibold px-3 py-1.5 rounded-lg hover:bg-red-50 transition-colors">
                       Cancelar
-                    </Button>
+                    </button>
                   )}
-                  <Link to={`/paciente/consultas/${c.consulta_id}`}>
-                    <Button variant="ghost" size="sm">
-                      <ChevronRight size={16} />
-                    </Button>
+                  <Link to={`/app/paciente/consultas/${c.consulta_id}`}
+                    className="p-1.5 rounded-lg text-slate-300 hover:text-slate-500 hover:bg-slate-100 transition-colors">
+                    <ChevronRight size={16} />
                   </Link>
                 </div>
               </div>
-            </Card>
-          ))}
+            )
+          })}
         </div>
       )}
 
-      <ConfirmDialog
-        open={!!cancelId}
-        onClose={() => setCancelId(null)}
-        onConfirm={handleCancelar}
+      <Confirm open={!!cancelId} onClose={() => setCancelId(null)} onConfirm={handleCancelar}
         title="Cancelar consulta"
-        description="Tem certeza que deseja cancelar esta consulta? Esta ação não pode ser desfeita."
-        confirmLabel="Sim, cancelar"
-        loading={canceling}
-      />
+        desc="Tem certeza que deseja cancelar esta consulta? Esta ação não pode ser desfeita."
+        label="Cancelar consulta" loading={canceling} />
     </div>
   )
 }

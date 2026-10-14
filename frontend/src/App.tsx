@@ -3,69 +3,68 @@ import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { ToastProvider } from './contexts/ToastContext'
 import { ProtectedRoute } from './routes/ProtectedRoute'
 
+import LandingPage from './pages/LandingPage'
 import LoginPage from './pages/auth/LoginPage'
 import RegistroPage from './pages/auth/RegistroPage'
 import RecuperarSenhaPage from './pages/auth/RecuperarSenhaPage'
 import ResetarSenhaPage from './pages/auth/ResetarSenhaPage'
 
 import PacienteDashboard from './pages/paciente/PacienteDashboard'
-import AgendarConsultaPage from './pages/paciente/AgendarConsultaPage'
+import AgendarPage from './pages/paciente/AgendarPage'
 import ConsultasPacientePage from './pages/paciente/ConsultasPacientePage'
-import DetalheConsultaPacientePage from './pages/paciente/DetalheConsultaPacientePage'
+import DetalheConsultaPaciente from './pages/paciente/DetalheConsultaPaciente'
 import PerfilPacientePage from './pages/paciente/PerfilPacientePage'
 
-import MedicoDashboard from './pages/medico/MedicoDashboard'
-import AgendaMedicoPage from './pages/medico/AgendaMedicoPage'
-import ConsultasMedicoPage from './pages/medico/ConsultasMedicoPage'
-import DetalheConsultaMedicoPage from './pages/medico/DetalheConsultaMedicoPage'
-import HorariosMedicoPage from './pages/medico/HorariosMedicoPage'
-import PerfilMedicoPage from './pages/medico/PerfilMedicoPage'
+import {
+  MedicoDashboard, AgendaMedicoPage, ConsultasMedicoPage,
+  DetalheConsultaMedicoPage, HorariosMedicoPage, PerfilMedicoPage
+} from './pages/medico/MedicoPages'
 
-import AdminDashboard from './pages/admin/AdminDashboard'
-import AdminMedicosPage from './pages/admin/AdminMedicosPage'
-import AdminPacientesPage from './pages/admin/AdminPacientesPage'
-import AdminConsultasPage from './pages/admin/AdminConsultasPage'
-import AdminRelatoriosPage from './pages/admin/AdminRelatoriosPage'
+import {
+  AdminDashboard, AdminMedicosPage, AdminPacientesPage,
+  AdminConsultasPage, AdminRelatoriosPage
+} from './pages/admin/AdminPages'
 
 function RootRedirect() {
   const { isAuthenticated, usuario } = useAuth()
-  if (!isAuthenticated) return <Navigate to="/login" replace />
-  const redirects: Record<string, string> = { paciente: '/paciente', medico: '/medico', admin: '/admin' }
-  return <Navigate to={redirects[usuario!.tipo]} replace />
+  if (!isAuthenticated) return <Navigate to="/" replace />
+  const r: Record<string, string> = { paciente: '/app/paciente', medico: '/app/medico', admin: '/app/admin' }
+  return <Navigate to={r[usuario!.tipo]} replace />
 }
 
 function AppRoutes() {
   return (
     <Routes>
-      <Route path="/" element={<RootRedirect />} />
+      <Route path="/" element={<LandingPage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/registro" element={<RegistroPage />} />
       <Route path="/recuperar-senha" element={<RecuperarSenhaPage />} />
       <Route path="/resetar-senha" element={<ResetarSenhaPage />} />
+      <Route path="/app" element={<RootRedirect />} />
 
       <Route element={<ProtectedRoute tipo="paciente" />}>
-        <Route path="/paciente" element={<PacienteDashboard />} />
-        <Route path="/paciente/agendar" element={<AgendarConsultaPage />} />
-        <Route path="/paciente/consultas" element={<ConsultasPacientePage />} />
-        <Route path="/paciente/consultas/:id" element={<DetalheConsultaPacientePage />} />
-        <Route path="/paciente/perfil" element={<PerfilPacientePage />} />
+        <Route path="/app/paciente" element={<PacienteDashboard />} />
+        <Route path="/app/paciente/agendar" element={<AgendarPage />} />
+        <Route path="/app/paciente/consultas" element={<ConsultasPacientePage />} />
+        <Route path="/app/paciente/consultas/:id" element={<DetalheConsultaPaciente />} />
+        <Route path="/app/paciente/perfil" element={<PerfilPacientePage />} />
       </Route>
 
       <Route element={<ProtectedRoute tipo="medico" />}>
-        <Route path="/medico" element={<MedicoDashboard />} />
-        <Route path="/medico/agenda" element={<AgendaMedicoPage />} />
-        <Route path="/medico/consultas" element={<ConsultasMedicoPage />} />
-        <Route path="/medico/consultas/:id" element={<DetalheConsultaMedicoPage />} />
-        <Route path="/medico/horarios" element={<HorariosMedicoPage />} />
-        <Route path="/medico/perfil" element={<PerfilMedicoPage />} />
+        <Route path="/app/medico" element={<MedicoDashboard />} />
+        <Route path="/app/medico/agenda" element={<AgendaMedicoPage />} />
+        <Route path="/app/medico/consultas" element={<ConsultasMedicoPage />} />
+        <Route path="/app/medico/consultas/:id" element={<DetalheConsultaMedicoPage />} />
+        <Route path="/app/medico/horarios" element={<HorariosMedicoPage />} />
+        <Route path="/app/medico/perfil" element={<PerfilMedicoPage />} />
       </Route>
 
       <Route element={<ProtectedRoute tipo="admin" />}>
-        <Route path="/admin" element={<AdminDashboard />} />
-        <Route path="/admin/medicos" element={<AdminMedicosPage />} />
-        <Route path="/admin/pacientes" element={<AdminPacientesPage />} />
-        <Route path="/admin/consultas" element={<AdminConsultasPage />} />
-        <Route path="/admin/relatorios" element={<AdminRelatoriosPage />} />
+        <Route path="/app/admin" element={<AdminDashboard />} />
+        <Route path="/app/admin/medicos" element={<AdminMedicosPage />} />
+        <Route path="/app/admin/pacientes" element={<AdminPacientesPage />} />
+        <Route path="/app/admin/consultas" element={<AdminConsultasPage />} />
+        <Route path="/app/admin/relatorios" element={<AdminRelatoriosPage />} />
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />

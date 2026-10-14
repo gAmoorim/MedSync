@@ -1,125 +1,90 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Calendar, Clock, ClipboardList, Plus, ArrowRight } from 'lucide-react'
-import { getHistoricoConsultas } from '../../api/paciente'
+import { Calendar, ClipboardList, Plus, ArrowRight, Clock } from 'lucide-react'
+import { getConsultasPaciente } from '../../api'
 import { useAuth } from '../../contexts/AuthContext'
-import { Button, Badge, Card, Loading, ErrorState } from '../../components/ui'
-import { formatDate, getStatusBadge, getStatusLabel } from '../../utils'
+import { Spinner, Err, Badge, StatCard } from '../../components/ui'
+import { formatDate, statusConfig } from '../../utils'
 import type { Consulta, StatusConsulta } from '../../types'
 
 export default function PacienteDashboard() {
   const { usuario } = useAuth()
   const [consultas, setConsultas] = useState<Consulta[]>([])
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(false)
+  const [err, setErr] = useState(false)
 
   useEffect(() => {
-    getHistoricoConsultas({ limite: 5 })
-      .then(setConsultas)
-      .catch(() => setError(true))
-      .finally(() => setLoading(false))
+    getConsultasPaciente({ limite: 10 })
+      .then(setConsultas).catch(() => setErr(true)).finally(() => setLoading(false))
   }, [])
 
   const proximas = consultas.filter(c => c.status === 'agendada' || c.status === 'confirmada')
-  const historico = consultas.filter(c => c.status === 'concluida' || c.status === 'cancelada')
+  const concluidas = consultas.filter(c => c.status === 'concluida').length
+  const canceladas = consultas.filter(c => c.status === 'cancelada').length
 
   const hora = new Date().getHours()
   const saudacao = hora < 12 ? 'Bom dia' : hora < 18 ? 'Boa tarde' : 'Boa noite'
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-7">
       {/* Header */}
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">{saudacao}, {usuario?.nome?.split(' ')[0]}!</h1>
-          <p className="text-slate-500 mt-1">Aqui está um resumo das suas consultas</p>
+          <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-1">{saudacao} 👋</p>
+          <h1 className="text-2xl font-bold text-navy-900">{usuario?.nome?.split(' ')[0]}</h1>
         </div>
-        <Link to="/paciente/agendar">
-          <Button>
-            <Plus size={16} />
-            Agendar Consulta
-          </Button>
+        <Link to="/app/paciente/agendar"
+          className="inline-flex items-center gap-2 bg-cyan-500 text-white text-sm font-semibold px-4 py-2.5 rounded-xl hover:bg-cyan-600 transition-colors shadow-sm shadow-cyan-500/20">
+          <Plus size={16} /> Agendar
         </Link>
       </div>
 
       {/* Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        {[
-          {
-            label: 'Próximas',
-            value: proximas.length,
-            icon: <Calendar size={20} className="text-primary-500" />,
-            bg: 'bg-primary-50',
-          },
-          {
-            label: 'Realizadas',
-            value: historico.filter(c => c.status === 'concluida').length,
-            icon: <ClipboardList size={20} className="text-success-500" />,
-            bg: 'bg-success-50',
-          },
-          {
-            label: 'Canceladas',
-            value: historico.filter(c => c.status === 'cancelada').length,
-            icon: <Clock size={20} className="text-slate-400" />,
-            bg: 'bg-slate-100',
-          },
-        ].map((stat) => (
-          <Card key={stat.label} className="flex items-center gap-4">
-            <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${stat.bg}`}>
-              {stat.icon}
-            </div>
-            <div>
-              <p className="text-2xl font-bold text-slate-900">{stat.value}</p>
-              <p className="text-sm text-slate-500">{stat.label}</p>
-            </div>
-          </Card>
-        ))}
+        <StatCard label="Próximas consultas" value={proximas.length} icon={<Calendar size={19} />} accent />
+        <StatCard label="Consultas realizadas" value={concluidas} icon={<ClipboardList size={19} />} />
+        <StatCard label="Canceladas" value={canceladas} icon={<Clock size={19} />} />
       </div>
 
-      {/* Upcoming consultations */}
-      <Card>
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="font-semibold text-slate-900">Próximas Consultas</h2>
-          <Link to="/paciente/consultas" className="text-sm text-primary-600 hover:underline flex items-center gap-1">
-            Ver todas <ArrowRight size={14} />
+      {/* Upcoming */}
+      <div className="app-card p-6">
+        <div className="flex items-center justify-between mb-5">
+          <h2 className="font-bold text-navy-900">Próximas consultas</h2>
+          <Link to="/app/paciente/consultas" className="text-xs text-cyan-600 font-semibold hover:text-cyan-700 flex items-center gap-1">
+            Ver todas <ArrowRight size={13} />
           </Link>
         </div>
 
-        {loading ? (
-          <Loading />
-        ) : error ? (
-          <ErrorState />
-        ) : proximas.length === 0 ? (
+        {loading ? <Spinner /> : err ? <Err /> : proximas.length === 0 ? (
           <div className="text-center py-10">
-            <Calendar size={36} className="mx-auto text-slate-200 mb-3" />
-            <p className="text-slate-500 text-sm">Nenhuma consulta agendada</p>
-            <Link to="/paciente/agendar">
-              <Button variant="secondary" size="sm" className="mt-3">
-                <Plus size={14} /> Agendar agora
-              </Button>
+            <Calendar size={32} className="mx-auto text-slate-200 mb-3" />
+            <p className="text-sm text-slate-400">Nenhuma consulta agendada</p>
+            <Link to="/app/paciente/agendar"
+              className="inline-flex items-center gap-1 text-sm text-cyan-600 font-semibold mt-3 hover:text-cyan-700">
+              <Plus size={14} /> Agendar agora
             </Link>
           </div>
         ) : (
-          <div className="space-y-3">
-            {proximas.map((c, i) => (
-              <Link key={i} to={`/paciente/consultas/${c.consulta_id}`}>
-                <div className="flex items-center gap-4 p-3 rounded-xl hover:bg-slate-50 transition-colors">
-                  <div className="w-10 h-10 rounded-xl bg-primary-50 flex items-center justify-center shrink-0">
-                    <Calendar size={18} className="text-primary-500" />
+          <div className="divide-y divide-slate-50">
+            {proximas.map((c, i) => {
+              const sc = statusConfig[c.status as StatusConsulta]
+              return (
+                <Link key={i} to={`/app/paciente/consultas/${c.consulta_id}`}
+                  className="flex items-center gap-4 py-3.5 first:pt-0 last:pb-0 hover:opacity-80 transition-opacity">
+                  <div className="w-10 h-10 rounded-xl bg-cyan-50 flex items-center justify-center shrink-0">
+                    <Calendar size={17} className="text-cyan-500" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="font-medium text-slate-900 text-sm truncate">{c.medico_nome}</p>
-                    <p className="text-xs text-slate-500">{c.especialidade} · {formatDate(c.data)} · {c.hora}</p>
+                    <p className="text-sm font-semibold text-navy-900 truncate">{c.medico_nome}</p>
+                    <p className="text-xs text-slate-400 mt-0.5">{c.especialidade} · {formatDate(c.data)} · {c.hora}</p>
                   </div>
-                  <Badge variant={getStatusBadge(c.status as StatusConsulta).replace('badge-', '') as 'blue' | 'green' | 'red' | 'gray'}>
-                    {getStatusLabel(c.status as StatusConsulta)}
-                  </Badge>
-                </div>
-              </Link>
-            ))}
+                  <Badge cls={sc.cls}>{sc.label}</Badge>
+                </Link>
+              )
+            })}
           </div>
         )}
-      </Card>
+      </div>
     </div>
   )
 }
