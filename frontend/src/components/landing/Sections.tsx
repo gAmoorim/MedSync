@@ -760,7 +760,8 @@ export function Footer() {
         <div className="flex flex-col items-center justify-between gap-3 border-t border-white/10 pt-6 sm:flex-row">
           <p className="text-center text-xs text-white/40">
             © {new Date().getFullYear()} Clínica MedSync. Todos os direitos
-            reservados.
+            reservados. 
+            <br /> Este é um projeto fictício desenvolvido para fins de portfólio. Não representa uma clínica real.
           </p>
 
           <Link
