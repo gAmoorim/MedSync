@@ -286,7 +286,7 @@ export function Sobre() {
             <p className="mb-5 leading-relaxed text-slate-500">
               A Clínica MedSync nasceu com uma missão clara: oferecer
               atendimento médico de excelência com a humanidade que cada
-              paciente merece. Desde 2009, somos referência em saúde no Ceará,
+              paciente merece. Desde 2009, somos referência em saúde no Brasil,
               combinando tecnologia de ponta com o cuidado genuíno pelos
               nossos pacientes.
             </p>
@@ -616,20 +616,20 @@ const contatos = [
   {
     icon: <Phone size={20} />,
     label: 'Telefone',
-    value: '(85) 3333-4444',
+    value: '(99) 3333-4444',
     sub: 'Seg–Sex, 7h–20h',
   },
   {
     icon: <Mail size={20} />,
     label: 'E-mail',
-    value: 'contato@medsync.com.br',
+    value: 'exemplo@medsync.com.br',
     sub: 'Respondemos em até 24h',
   },
   {
     icon: <MapPin size={20} />,
     label: 'Endereço',
-    value: 'Av. Santos Dumont, 1000',
-    sub: 'Fortaleza – CE, 60150-160',
+    value: 'Av. Exemplo, 1000',
+    sub: 'Brasil – CE, 12345-123',
   },
 ]
 
@@ -684,11 +684,11 @@ const linksNavegacao = [
 ]
 
 const contatosFooter = [
-  { icon: <Phone size={13} />, texto: '(85) 3333-4444' },
-  { icon: <Mail size={13} />, texto: 'contato@medsync.com.br' },
+  { icon: <Phone size={13} />, texto: '(99) 3333-4444' },
+  { icon: <Mail size={13} />, texto: 'exemplo@medsync.com.br' },
   {
     icon: <MapPin size={13} />,
-    texto: 'Av. Santos Dumont, 1000 – Fortaleza',
+    texto: 'Av. Exemplo, 1000 – Brasil',
   },
 ]
 
