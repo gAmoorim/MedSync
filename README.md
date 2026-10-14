@@ -1,3 +1,5 @@
+> ⚠️ **Aviso:** Este é um projeto fictício desenvolvido exclusivamente para fins de portfólio e demonstração técnica. Todos os dados, nomes, especialidades e informações apresentados são fictícios. Não representa nenhuma clínica ou serviço médico real.
+
 <div align="center">
 
 <img src="https://img.shields.io/badge/MedSync-Sistema%20de%20Agendamento-06b6d4?style=for-the-badge&logo=data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IndoaXRlIiBzdHJva2Utd2lkdGg9IjIiPjxwYXRoIGQ9Ik00LjggMi40QTIuNCAyLjQgMCAwIDAgMi40IDQuOHYxNC40YTIuNCAyLjQgMCAwIDAgMi40IDIuNGgxNC40YTIuNCAyLjQgMCAwIDAgMi40LTIuNFY0LjhhMi40IDIuNCAwIDAgMC0yLjQtMi40SDQuOHoiLz48cGF0aCBkPSJNOCAxMmg4TTEyIDh2OCI+PC9wYXRoPjwvc3ZnPg==" alt="MedSync" />
