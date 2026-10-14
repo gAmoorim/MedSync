@@ -57,8 +57,8 @@ O sistema conta com uma **landing page institucional** que apresenta a clínica,
 ### Backend
 | Tecnologia | Uso |
 |---|---|
-| Node.js (CommonJS) | Runtime |
-| Express 5 | Framework HTTP |
+| Node.js | Runtime |
+| Express | Framework HTTP |
 | Knex.js | Query builder e migrations |
 | PostgreSQL | Banco de dados |
 | JWT | Autenticação |
@@ -139,16 +139,16 @@ cp .env.example .env
 Edite o `.env` com suas credenciais:
 
 ```env
-PORT=3000
-DB_HOST=localhost
-DB_PORT=5432
-DB_USER=seu_usuario
-DB_PASSWORD=sua_senha
-DB_NAME=medsync
-JWT_PWD=sua_chave_jwt_secreta
-FRONTEND_URL=http://localhost:5173
-MAILTRAP_USER=seu_user_mailtrap
-MAILTRAP_PASS=sua_senha_mailtrap
+PORT=
+DB_HOST=
+DB_PORT=
+DB_USER=
+DB_PASSWORDsua_senha
+DB_NAMEmedsync
+JWT_PWD=
+FRONTEND_URL=
+MAILTRAP_USER=
+MAILTRAP_PASS=
 ```
 
 Crie o banco e rode o script SQL:
