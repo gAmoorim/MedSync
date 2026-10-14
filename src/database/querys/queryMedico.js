@@ -116,7 +116,7 @@ const queryDefinirHorarios = async (medicoId, dias_semana, hora_inicio, hora_fim
         hora_fim,
         intervalo_minutos,
         data_inicio_vigencia,
-        data_fim_vigencia
+        data_fim_vigencia: data_fim_vigencia || null
     }))
 
     return await knex('horarios_atendimento')
