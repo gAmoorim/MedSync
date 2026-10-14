@@ -17,7 +17,7 @@ export function Hero() {
   return (
     <section
       id="inicio"
-      className="relative flex min-h-[calc(100svh-64px)] items-center overflow-hidden bg-navy-950"
+      className="relative flex min-h-screen items-center overflow-hidden bg-navy-950 py-12 lg:py-0"
     >
       <div
         aria-hidden="true"
@@ -50,12 +50,12 @@ export function Hero() {
               e dedicação
             </h1>
 
-            <p className="mb-7 max-w-xl text-sm leading-relaxed text-white/60 sm:text-base lg:mb-8">
+            <p className="mb-10 max-w-xl text-sm leading-relaxed text-white/60 sm:text-base lg:mb-12">
               Atendimento médico humanizado com especialistas de alto nível.
               Agende sua consulta online de forma rápida, fácil e segura.
             </p>
 
-            <div className="mt-9 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:gap-4">
+            <div className="mt-9 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:gap-6">
               <Link
                 to="/registro"
                 className="btn-primary btn-lg group w-full justify-center sm:w-auto"
