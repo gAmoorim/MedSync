@@ -69,12 +69,6 @@ export default function LoginPage() {
         </div>
 
         <div className="relative z-10 flex gap-8">
-          {[['3', 'Perfis de acesso'], ['24/7', 'Disponível'], ['100%', 'Seguro']].map(([v, l]) => (
-            <div key={l}>
-              <p className="text-xl font-bold text-white">{v}</p>
-              <p className="text-xs text-white/30 mt-0.5">{l}</p>
-            </div>
-          ))}
         </div>
       </div>
 
